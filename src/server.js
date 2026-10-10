@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const fs = require('fs');
 const config = require('./config');
 const db = require('./db');
 const { seedDatabase } = require('./seed');
@@ -9,6 +10,11 @@ const { requireAuth, validateSession } = require('./auth');
 const apiRoutes = require('./routes/api');
 
 const app = express();
+
+// Path folder public (kompatibel lokal & Vercel serverless)
+const PUBLIC_DIR = fs.existsSync(path.join(__dirname, '..', 'public'))
+  ? path.join(__dirname, '..', 'public')
+  : path.join(process.cwd(), 'public');
 
 // Disable x-powered-by header for security
 app.disable('x-powered-by');
@@ -26,6 +32,40 @@ app.use(cors());
 app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static frontend files (css, js, assets)
+app.use(express.static(PUBLIC_DIR));
+
+// Lazy initialization untuk serverless environment (Vercel) & local server
+let isInitialized = false;
+let initPromise = null;
+
+async function ensureInitialized() {
+  if (isInitialized) return;
+  if (!initPromise) {
+    initPromise = (async () => {
+      try {
+        await db.initDb();
+        await seedDatabase(false);
+      } catch (err) {
+        console.error('Database initialization notice:', err.message);
+      } finally {
+        isInitialized = true;
+      }
+    })();
+  }
+  return initPromise;
+}
+
+// Middleware inisialisasi database sebelum memproses endpoint/rute
+app.use(async (req, res, next) => {
+  try {
+    await ensureInitialized();
+  } catch (err) {
+    console.error('Error during lazy initialization:', err);
+  }
+  next();
+});
 
 // Health Check API (Production & Monitoring Endpoint)
 // Mengembalikan status aplikasi & database tanpa membocorkan kredensial rahasia
@@ -49,15 +89,12 @@ app.get(['/api/health', '/health'], async (req, res) => {
   }
 });
 
-// Serve static frontend files (css, js, assets)
-app.use(express.static(path.join(__dirname, '..', 'public')));
-
 // Mount API routes
 app.use('/api', apiRoutes);
 
 // Public Routes - Scanner Kiosk (NO LOGIN REQUIRED)
 app.get(['/', '/scan', '/scanner'], (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
 // Login Page
@@ -68,10 +105,10 @@ app.get('/login', async (req, res) => {
     if (user) {
       return res.redirect('/admin/dashboard');
     }
-    return res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
+    return res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
   } catch (err) {
     console.error('Error on /login page:', err);
-    return res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
+    return res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
   }
 });
 
@@ -87,7 +124,7 @@ const adminRoutes = [
 ];
 
 app.get(adminRoutes, requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'admin.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 
 // Centralized Production Error Handler Middleware
@@ -118,10 +155,7 @@ async function startServer() {
   try {
     const isPostgres = config.DB_TYPE === 'postgres';
     console.log(`Menginisialisasi Database (${isPostgres ? 'Supabase PostgreSQL' : 'SQLite Lokal'})...`);
-    await db.initDb();
-
-    console.log('Memeriksa data awal (seed)...');
-    await seedDatabase(false);
+    await ensureInitialized();
 
     // Bind ke 0.0.0.0 agar dapat diakses dari device lain di jaringan / internet
     const server = app.listen(config.PORT, '0.0.0.0', () => {
@@ -155,4 +189,8 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { app, startServer };
+// Ekspor app secara langsung agar dikenali Vercel Serverless Function,
+// dan sertakan startServer agar kompatibel dengan skrip testing
+app.startServer = startServer;
+module.exports = app;
+

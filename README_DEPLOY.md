@@ -36,14 +36,23 @@ Sebelum aplikasi dijalankan di server online, platform hosting hanya membutuhkan
 
 Aplikasi ini adalah aplikasi standar **Node.js**. Anda bisa memilih salah satu opsi berikut:
 
-### Opsi 1: Railway (Sangat Direkomendasikan & Paling Mudah)
+### Opsi 1: Vercel (Gratis & Cepat)
+1. Buka dashboard [vercel.com](https://vercel.com) dan impor repositori GitHub ini.
+2. Buka **Settings** ➔ **Environment Variables** di project Vercel Anda, lalu tambahkan:
+   - `DATABASE_URL`: Alamat URI PostgreSQL Supabase Anda (Wajib agar data tersimpan permanen di cloud).
+   - `SUPABASE_URL`: (Opsional) URL project Supabase Anda.
+   - `NODE_ENV`: `production`
+3. Klik **Deploy** (atau push commit baru ke GitHub).
+4. Vercel akan otomatis mendeteksi konfigurasi `vercel.json` dan menyajikan aplikasi secara online.
+
+### Opsi 2: Railway (Sangat Direkomendasikan & Paling Mudah)
 1. Buat akun di [railway.app](https://railway.app).
 2. Klik **New Project** ➔ **Deploy from GitHub repo** (pilih repositori project ini).
 3. Buka tab **Variables** ➔ tambahkan variabel `DATABASE_URL`, `SUPABASE_URL`, dan `NODE_ENV=production`.
 4. Railway akan otomatis menjalankan `npm start`.
 5. Anda akan mendapatkan URL HTTPS gratis (contoh: `https://absensi-pondok.up.railway.app`).
 
-### Opsi 2: Render.com (Mudah & Ada Tier Gratis)
+### Opsi 3: Render.com (Mudah & Ada Tier Gratis)
 1. Buat akun di [render.com](https://render.com).
 2. Klik **New Web Service** ➔ Hubungkan dengan repositori GitHub Anda.
 3. Atur:

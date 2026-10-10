@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "build": "echo \"Build successfully completed\"",
     "migrate:supabase": "node scripts/migrate_sqlite_to_supabase.js",
     "test": "node tests/rules.test.js && node tests/dual_scanner.test.js && node tests/complete_features.test.js"
   },
