@@ -1,5 +1,6 @@
 const db = require('./db');
 const { getJakartaDate } = require('./rules');
+const { getPrayerTimesForDate } = require('./prayerService');
 
 const SAMPLE_PERSONS = [
   // PENGURUS
@@ -128,8 +129,23 @@ async function seedDatabase(force = false) {
   db.save();
 }
 
-async function seedPrayerScheduleForDate(dateStr, customTimes = null) {
-  const times = customTimes || DEFAULT_PRAYER_TIMES;
+async function seedPrayerScheduleForDate(dateStr, customTimes = null, region = 'YOGYAKARTA') {
+  let times = customTimes;
+  if (!times) {
+    try {
+      const calc = getPrayerTimesForDate(dateStr, region);
+      times = {
+        SUBUH: calc.SUBUH,
+        DZUHUR: calc.DZUHUR,
+        ASHAR: calc.ASHAR,
+        MAGHRIB: calc.MAGHRIB,
+        ISYA: calc.ISYA
+      };
+    } catch (e) {
+      times = DEFAULT_PRAYER_TIMES;
+    }
+  }
+
   for (const [prayer, adhan] of Object.entries(times)) {
     const existing = await db.queryOne('SELECT id FROM prayer_schedules WHERE tanggal = ? AND prayer_type = ?', [dateStr, prayer]);
     if (!existing) {

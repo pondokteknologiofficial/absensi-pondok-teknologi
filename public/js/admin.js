@@ -85,6 +85,9 @@
   const prayerDateTomorrowBtn = document.getElementById('prayerDateTomorrowBtn');
   const prayerDateDayAfterBtn = document.getElementById('prayerDateDayAfterBtn');
   const prayerConfigStatusBadge = document.getElementById('prayerConfigStatusBadge');
+  const prayerRegionSelect = document.getElementById('prayerRegionSelect');
+  const calcDynamicPrayersBtn = document.getElementById('calcDynamicPrayersBtn');
+  const syncAutoMonthBtn = document.getElementById('syncAutoMonthBtn');
 
   // History Elements
   const attendancesTbody = document.getElementById('attendancesTbody');
@@ -704,6 +707,26 @@
     prayerAlertBox.style.display = 'none';
   }
 
+  async function fetchCalculatedPrayers(dateStr, regionKey) {
+    try {
+      const reg = regionKey || (prayerRegionSelect ? prayerRegionSelect.value : 'YOGYAKARTA');
+      const res = await fetch(`/api/prayer-schedules/calculate?tanggal=${dateStr}&region=${reg}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        return [
+          { prayer_type: 'SUBUH', nama_absensi: 'Shalat Subuh', icon: '🌅', adhan_time: json.data.SUBUH },
+          { prayer_type: 'DZUHUR', nama_absensi: 'Shalat Dzuhur', icon: '☀️', adhan_time: json.data.DZUHUR },
+          { prayer_type: 'ASHAR', nama_absensi: 'Shalat Ashar', icon: '🌤️', adhan_time: json.data.ASHAR },
+          { prayer_type: 'MAGHRIB', nama_absensi: 'Shalat Maghrib', icon: '🌇', adhan_time: json.data.MAGHRIB },
+          { prayer_type: 'ISYA', nama_absensi: 'Shalat Isya', icon: '🌙', adhan_time: json.data.ISYA }
+        ];
+      }
+    } catch (e) {
+      console.warn('Failed to calculate dynamic prayers:', e);
+    }
+    return standardPrayerDefaults;
+  }
+
   async function loadPrayerSchedules(dateStr) {
     hidePrayerAlert();
     const activeDate = dateStr || prayerDatePicker.value || globalDateFilter.value || getTodayDateStr();
@@ -723,12 +746,14 @@
         `;
         renderPrayerTableRows(data.schedules);
       } else {
+        const dynamicPrayers = await fetchCalculatedPrayers(activeDate, prayerRegionSelect ? prayerRegionSelect.value : 'YOGYAKARTA');
+        const regName = prayerRegionSelect ? prayerRegionSelect.options[prayerRegionSelect.selectedIndex].text : 'Yogyakarta';
         prayerConfigStatusBadge.innerHTML = `
           <span class="badge badge-yellow" style="font-size: 13px; font-weight: 700; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
-            <span>⚠️</span> Jadwal Tanggal ${formatDisplayDate(activeDate)} Belum Disimpan (Menampilkan Rekomendasi). Sesuaikan jam lalu klik Simpan.
+            <span>📍</span> Tanggal ${formatDisplayDate(activeDate)} Dihitung Otomatis (${regName}). Sesuaikan jam lalu klik Simpan.
           </span>
         `;
-        renderPrayerTableRows(standardPrayerDefaults);
+        renderPrayerTableRows(dynamicPrayers);
       }
     } catch (err) {
       console.error('Failed to load prayer schedules:', err);
@@ -902,11 +927,69 @@
     }
   });
 
+  // Action: Hitung Waktu Jogja Otomatis (Astronomis Kemenag)
+  if (calcDynamicPrayersBtn) {
+    calcDynamicPrayersBtn.addEventListener('click', async () => {
+      const activeDate = prayerDatePicker.value || globalDateFilter.value || getTodayDateStr();
+      const reg = prayerRegionSelect ? prayerRegionSelect.value : 'YOGYAKARTA';
+      const dynamicRows = await fetchCalculatedPrayers(activeDate, reg);
+      renderPrayerTableRows(dynamicRows);
+      const regText = prayerRegionSelect ? prayerRegionSelect.options[prayerRegionSelect.selectedIndex].text : 'Yogyakarta';
+      showPrayerAlert(`📍 Waktu adzan astronomis untuk ${regText} pada ${formatDisplayDate(activeDate)} berhasil dihitung! Klik "Simpan Tanggal Ini" untuk menyimpannya ke database.`, 'info');
+    });
+  }
+
+  // Action: Generate & Simpan Otomatis 30 Hari ke Depan
+  if (syncAutoMonthBtn) {
+    syncAutoMonthBtn.addEventListener('click', async () => {
+      hidePrayerAlert();
+      const activeDate = prayerDatePicker.value || globalDateFilter.value || getTodayDateStr();
+      const reg = prayerRegionSelect ? prayerRegionSelect.value : 'YOGYAKARTA';
+      const regText = prayerRegionSelect ? prayerRegionSelect.options[prayerRegionSelect.selectedIndex].text : 'Yogyakarta';
+
+      if (!confirm(`Generate dan simpan otomatis seluruh waktu shalat selama 30 hari ke depan untuk ${regText} mulai tanggal ${formatDisplayDate(activeDate)}?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/prayer-schedules/sync-range', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ start_date: activeDate, days: 30, region: reg })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showPrayerAlert(data.error || 'Gagal generate jadwal otomatis', 'error');
+          return;
+        }
+        showPrayerAlert(`✅ ${data.message || 'Jadwal 30 hari berhasil digenerate dan disimpan ke database!'}`, 'success');
+        loadPrayerSchedules(activeDate);
+      } catch (err) {
+        showPrayerAlert('Terjadi kesalahan saat generate jadwal otomatis', 'error');
+      }
+    });
+  }
+
+  // Listener ganti wilayah Jogja
+  if (prayerRegionSelect) {
+    prayerRegionSelect.addEventListener('change', async () => {
+      const activeDate = prayerDatePicker.value || globalDateFilter.value || getTodayDateStr();
+      const res = await fetch(`/api/prayer-schedules?date=${activeDate}`);
+      const data = await res.json();
+      if (!data.is_configured) {
+        const dynamicRows = await fetchCalculatedPrayers(activeDate, prayerRegionSelect.value);
+        renderPrayerTableRows(dynamicRows);
+      }
+    });
+  }
+
   // Action: Reset / Apply standard defaults
-  fillDefaultPrayersBtn.addEventListener('click', () => {
-    renderPrayerTableRows(standardPrayerDefaults);
-    showPrayerAlert('Waktu adzan standar telah dimuat pada form. Silakan klik "Simpan Jadwal Tanggal Ini" untuk menyimpannya ke database.', 'info');
-  });
+  if (fillDefaultPrayersBtn) {
+    fillDefaultPrayersBtn.addEventListener('click', () => {
+      renderPrayerTableRows(standardPrayerDefaults);
+      showPrayerAlert('Waktu adzan standar telah dimuat pada form. Silakan klik "Simpan Tanggal Ini" untuk menyimpannya ke database.', 'info');
+    });
+  }
 
   // Date Navigation Listeners
   prayerDateTodayBtn.addEventListener('click', () => {

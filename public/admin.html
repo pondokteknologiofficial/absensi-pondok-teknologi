@@ -299,18 +299,28 @@
           <div>
             <h2>Kustomisasi Jadwal & Waktu Adzan Shalat</h2>
             <p style="color: var(--text-secondary); font-size: 13px;">
-              Sesuaikan waktu adzan kapan saja. Sistem otomatis menghitung batas toleransi Hijau (Hadir), Kuning (Terlambat), Merah (Terlambat Berat), dan Tutup.
+              Waktu adzan dapat dihitung otomatis & dinamis menyesuaikan matahari wilayah Yogyakarta (Kemenag RI), atau disesuaikan manual kapan saja.
             </p>
           </div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button id="fillDefaultPrayersBtn" class="btn-secondary" title="Gunakan waktu adzan standar rekomendasi">
-              <span>⚡</span> Waktu Standar
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <select id="prayerRegionSelect" class="input-select" style="font-weight: 600; padding: 7px 12px; background: rgba(30, 41, 59, 0.9);">
+              <option value="YOGYAKARTA">🕌 Kota Yogyakarta</option>
+              <option value="SLEMAN">🕌 Kab. Sleman</option>
+              <option value="BANTUL">🕌 Kab. Bantul</option>
+              <option value="KULON_PROGO">🕌 Kab. Kulon Progo</option>
+              <option value="GUNUNGKIDUL">🕌 Kab. Gunungkidul</option>
+            </select>
+            <button id="calcDynamicPrayersBtn" class="btn-secondary" title="Hitung waktu adzan astronomis wilayah terpilih untuk tanggal ini">
+              <span>📍</span> Hitung Waktu Jogja
+            </button>
+            <button id="syncAutoMonthBtn" class="btn-success" title="Generate otomatis jadwal shalat selama 30 hari ke depan">
+              <span>📅</span> Generate 30 Hari Otomatis
             </button>
             <button id="savePrayerScheduleBtn" class="btn-primary" style="font-weight: 700;">
-              <span>💾</span> Simpan Jadwal Tanggal Ini
+              <span>💾</span> Simpan Tanggal Ini
             </button>
-            <button id="copyPrayerWeekBtn" class="btn-success" title="Salin waktu ini ke 7 hari ke depan agar tidak perlu input setiap hari">
-              <span>📋</span> Terapkan ke 7 Hari ke Depan
+            <button id="copyPrayerWeekBtn" class="btn-secondary" title="Salin waktu ini ke 7 hari ke depan">
+              <span>📋</span> Salin ke 7 Hari
             </button>
           </div>
         </div>

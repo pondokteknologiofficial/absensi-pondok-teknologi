@@ -22,6 +22,7 @@ const {
   destroySession,
   requireAuth
 } = require('../auth');
+const { REGIONS, getPrayerTimesForDate } = require('../prayerService');
 
 const router = express.Router();
 
@@ -834,6 +835,117 @@ router.post('/prayer-schedules/defaults', async (req, res) => {
     res.status(500).json({ error: 'Gagal mengisi jadwal default' });
   }
 });
+
+// GET /api/prayer-schedules/regions - Daftar wilayah perhitungan Yogyakarta & sekitarnya
+router.get('/prayer-schedules/regions', (req, res) => {
+  res.json({
+    success: true,
+    regions: Object.values(REGIONS)
+  });
+});
+
+// GET /api/prayer-schedules/calculate - Hitung waktu shalat dinamis Jogja (preview tanpa simpan)
+router.get('/prayer-schedules/calculate', (req, res) => {
+  try {
+    const { tanggal, region } = req.query;
+    const dateStr = tanggal || getJakartaDate();
+    const result = getPrayerTimesForDate(dateStr, region || 'YOGYAKARTA');
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (err) {
+    console.error('calculate prayer error:', err);
+    res.status(500).json({ error: 'Gagal menghitung waktu shalat' });
+  }
+});
+
+// POST /api/prayer-schedules/sync-auto - Hitung dan simpan langsung ke database untuk 1 tanggal
+router.post('/prayer-schedules/sync-auto', async (req, res) => {
+  try {
+    const { tanggal, region } = req.body;
+    const dateStr = tanggal || getJakartaDate();
+    const regionKey = region || 'YOGYAKARTA';
+    const calc = getPrayerTimesForDate(dateStr, regionKey);
+
+    const prayerMap = {
+      SUBUH: calc.SUBUH,
+      DZUHUR: calc.DZUHUR,
+      ASHAR: calc.ASHAR,
+      MAGHRIB: calc.MAGHRIB,
+      ISYA: calc.ISYA
+    };
+
+    for (const [prayer, adhan] of Object.entries(prayerMap)) {
+      const existing = await db.queryOne('SELECT id FROM prayer_schedules WHERE tanggal = ? AND prayer_type = ?', [dateStr, prayer]);
+      if (existing) {
+        await db.run('UPDATE prayer_schedules SET adhan_time = ? WHERE id = ?', [adhan, existing.id]);
+      } else {
+        await db.run('INSERT INTO prayer_schedules (tanggal, prayer_type, adhan_time) VALUES (?, ?, ?)', [dateStr, prayer, adhan]);
+      }
+    }
+
+    db.save();
+
+    res.json({
+      success: true,
+      message: `Jadwal shalat untuk ${calc.region} (${dateStr}) berhasil disinkronkan otomatis!`,
+      schedules: calc
+    });
+  } catch (err) {
+    console.error('sync-auto prayer error:', err);
+    res.status(500).json({ error: 'Gagal menyinkronkan jadwal shalat otomatis' });
+  }
+});
+
+// POST /api/prayer-schedules/sync-range - Generate otomatis jadwal shalat selama N hari (misal 30 hari ke depan)
+router.post('/prayer-schedules/sync-range', async (req, res) => {
+  try {
+    const { start_date, days = 30, region } = req.body;
+    const startDateStr = start_date || getJakartaDate();
+    const totalDays = Math.min(Math.max(1, parseInt(days, 10) || 30), 365);
+    const regionKey = region || 'YOGYAKARTA';
+
+    const [y, m, d] = startDateStr.split('-').map(Number);
+
+    for (let i = 0; i < totalDays; i++) {
+      const dt = new Date(y, m - 1, d + i);
+      const curY = dt.getFullYear();
+      const curM = String(dt.getMonth() + 1).padStart(2, '0');
+      const curD = String(dt.getDate()).padStart(2, '0');
+      const curDateStr = `${curY}-${curM}-${curD}`;
+
+      const calc = getPrayerTimesForDate(curDateStr, regionKey);
+      const prayerMap = {
+        SUBUH: calc.SUBUH,
+        DZUHUR: calc.DZUHUR,
+        ASHAR: calc.ASHAR,
+        MAGHRIB: calc.MAGHRIB,
+        ISYA: calc.ISYA
+      };
+
+      for (const [prayer, adhan] of Object.entries(prayerMap)) {
+        const existing = await db.queryOne('SELECT id FROM prayer_schedules WHERE tanggal = ? AND prayer_type = ?', [curDateStr, prayer]);
+        if (existing) {
+          await db.run('UPDATE prayer_schedules SET adhan_time = ? WHERE id = ?', [adhan, existing.id]);
+        } else {
+          await db.run('INSERT INTO prayer_schedules (tanggal, prayer_type, adhan_time) VALUES (?, ?, ?)', [curDateStr, prayer, adhan]);
+        }
+      }
+    }
+
+    db.save();
+
+    res.json({
+      success: true,
+      message: `Berhasil men-generate jadwal shalat otomatis untuk ${totalDays} hari ke depan (Wilayah: ${REGIONS[regionKey]?.nama || 'Yogyakarta'})!`
+    });
+  } catch (err) {
+    console.error('sync-range prayer error:', err);
+    res.status(500).json({ error: 'Gagal membuat jadwal shalat otomatis' });
+  }
+});
+
 
 // ==========================================
 // 8. ATTENDANCES (RIWAYAT ABSENSI)
