@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Absensi Pondok Teknologi</title>
+  <meta name="description" content="Panel Pengelolaan Absensi, Data Orang, Jadwal, dan Riwayat Pondok Teknologi">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="icon" type="image/png" href="/images/logo.png">
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <img src="/images/logo.png" alt="Logo Pondok Teknologi">
+      </div>
+      <div class="sidebar-title">
+        <h2>PONDOK TEKNOLOGI</h2>
+        <p>Admin Dashboard</p>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-tab="dashboard" data-path="/admin/dashboard">
+        <span>📊</span> Dashboard Hari Ini
+      </div>
+      <div class="nav-item" data-tab="persons" data-path="/admin/persons">
+        <span>👥</span> Data Orang & QR
+      </div>
+      <div class="nav-item" data-tab="productive-rules" data-path="/admin/productive-schedule">
+        <span>⏰</span> Jadwal Produktif
+      </div>
+      <div class="nav-item" data-tab="prayer-rules" data-path="/admin/prayer-schedule">
+        <span>🕌</span> Jadwal Shalat
+      </div>
+      <div class="nav-item" data-tab="attendance-history" data-path="/admin/attendance-history">
+        <span>📜</span> Riwayat Absensi
+      </div>
+      <div class="nav-item" data-tab="system-backup" data-path="/admin/backup">
+        <span>💾</span> Backup Database
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-profile-bar">
+        <span>👤 <strong id="adminUsername">admin</strong></span>
+        <button id="logoutBtn" class="logout-btn" title="Keluar dari Panel Admin">Keluar 🚪</button>
+      </div>
+      <a href="/scanner" target="_blank" class="kiosk-btn">
+        <span>🖥️</span> Buka Layar Scanner
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="admin-main">
+    <!-- Top Header -->
+    <header class="admin-header">
+      <div class="page-title">
+        <h1 id="pageHeading">Dashboard Hari Ini</h1>
+        <p id="pageSubheading">Ringkasan kehadiran santri dan pengurus Pondok Teknologi</p>
+      </div>
+      <div class="header-actions">
+        <input type="date" id="globalDateFilter" class="input-date" title="Pilih Tanggal">
+        <button id="refreshDataBtn" class="btn-secondary" title="Segarkan Data">
+          <span>🔄</span> Segarkan
+        </button>
+      </div>
+    </header>
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="dashboardTab" class="tab-content active">
+      <!-- KPI Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon blue">👥</div>
+          <div class="metric-info">
+            <h3 id="statTotalPersons">0</h3>
+            <p>Total Orang Aktif</p>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon green">✅</div>
+          <div class="metric-info">
+            <h3 id="statHadir">0</h3>
+            <p>Hadir Tepat Waktu</p>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon yellow">🟡</div>
+          <div class="metric-info">
+            <h3 id="statTerlambat">0</h3>
+            <p>Terlambat</p>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon red">🔴</div>
+          <div class="metric-info">
+            <h3 id="statTerlambatBerat">0</h3>
+            <p>Terlambat Berat</p>
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon purple">📊</div>
+          <div class="metric-info">
+            <h3 id="statTotalScans">0</h3>
+            <p>Total Scan Hari Ini</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rekap Santri vs Pengurus -->
+      <div class="content-card">
+        <div class="content-card-header">
+          <h2>Rekap Berdasarkan Kategori (Santri & Pengurus)</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Kategori</th>
+                <th>Total Terdaftar</th>
+                <th>Hadir (Hijau)</th>
+                <th>Terlambat (Kuning)</th>
+                <th>Terlambat Berat (Merah)</th>
+                <th>Total Absensi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-purple">SANTRI</span></td>
+                <td id="dashSantriTotal">0</td>
+                <td id="dashSantriHadir">0</td>
+                <td id="dashSantriLate">0</td>
+                <td id="dashSantriLateCrit">0</td>
+                <td id="dashSantriSum" style="font-weight: 700;">0</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-blue">PENGURUS</span></td>
+                <td id="dashPengurusTotal">0</td>
+                <td id="dashPengurusHadir">0</td>
+                <td id="dashPengurusLate">0</td>
+                <td id="dashPengurusLateCrit">0</td>
+                <td id="dashPengurusSum" style="font-weight: 700;">0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Rekap per Sesi Absensi -->
+      <div class="content-card">
+        <div class="content-card-header">
+          <h2>Rekap Berdasarkan Sesi Absensi Hari Ini</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sesi Absensi</th>
+                <th>Jenis</th>
+                <th>Target Waktu</th>
+                <th>Waktu Scan</th>
+                <th>Hadir (Hijau)</th>
+                <th>Terlambat (Kuning)</th>
+                <th>Terlambat Berat (Merah)</th>
+                <th>Total Hadir</th>
+                <th>Belum Hadir</th>
+              </tr>
+            </thead>
+            <tbody id="sessionBreakdownTbody">
+              <tr><td colspan="9" style="text-align: center;">Memuat data sesi...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent 10 Scans -->
+      <div class="content-card">
+        <div class="content-card-header">
+          <h2>10 Absensi Terakhir Hari Ini</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Jam</th>
+                <th>Nama</th>
+                <th>Kategori</th>
+                <th>Sesi</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentScansTbody">
+              <tr><td colspan="5" style="text-align: center;">Belum ada scan hari ini.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: DATA ORANG & QR -->
+    <section id="personsTab" class="tab-content">
+      <div class="content-card">
+        <div class="content-card-header">
+          <h2>Daftar Santri & Pengurus</h2>
+          <div style="display: flex; gap: 8px;">
+            <button id="batchPrintQrBtn" class="btn-secondary">
+              <span>🖨️</span> Cetak Semua Kartu QR
+            </button>
+            <button id="addPersonBtn" class="btn-primary">
+              <span>➕</span> Tambah Orang Baru
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" id="personSearchInput" class="input-text" placeholder="Cari nama, nomor induk, QR..." style="width: 260px;">
+          <select id="personRoleFilter" class="input-select">
+            <option value="">Semua Kategori</option>
+            <option value="SANTRI">Santri</option>
+            <option value="PENGURUS">Pengurus</option>
+          </select>
+          <select id="personStatusFilter" class="input-select">
+            <option value="">Semua Status</option>
+            <option value="AKTIF">Aktif</option>
+            <option value="NONAKTIF">Nonaktif</option>
+          </select>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>No. Induk</th>
+                <th>Nama Lengkap</th>
+                <th>Kategori</th>
+                <th>Jurusan</th>
+                <th>Kode QR</th>
+                <th>Status</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="personsTbody">
+              <tr><td colspan="7" style="text-align: center;">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: JADWAL ABSENSI PRODUKTIF -->
+    <section id="productiveRulesTab" class="tab-content">
+      <!-- Overview Rule Cards -->
+      <div class="rule-cards-grid" id="productiveCardsContainer">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="content-card" style="margin-top: 24px;">
+        <div class="content-card-header">
+          <div>
+            <h2>Tabel Konfigurasi Jam Sesi Produktif</h2>
+            <p style="color: var(--text-secondary); font-size: 13px;">Tersimpan di database SQLite (tabel <code>attendance_rules</code>)</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nama Sesi</th>
+                <th>Mulai Scan (Hijau)</th>
+                <th>Target Waktu</th>
+                <th>Mulai Kuning (Terlambat)</th>
+                <th>Mulai Merah (Terlambat Berat)</th>
+                <th>Waktu Tutup</th>
+                <th>Status</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="productiveRulesTbody">
+              <tr><td colspan="8" style="text-align: center;">Memuat aturan...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: JADWAL SHALAT -->
+    <section id="prayerRulesTab" class="tab-content">
+      <div class="content-card">
+        <div class="content-card-header" style="flex-wrap: wrap; gap: 14px;">
+          <div>
+            <h2>Kustomisasi Jadwal & Waktu Adzan Shalat</h2>
+            <p style="color: var(--text-secondary); font-size: 13px;">
+              Sesuaikan waktu adzan kapan saja. Sistem otomatis menghitung batas toleransi Hijau (Hadir), Kuning (Terlambat), Merah (Terlambat Berat), dan Tutup.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button id="fillDefaultPrayersBtn" class="btn-secondary" title="Gunakan waktu adzan standar rekomendasi">
+              <span>⚡</span> Waktu Standar
+            </button>
+            <button id="savePrayerScheduleBtn" class="btn-primary" style="font-weight: 700;">
+              <span>💾</span> Simpan Jadwal Tanggal Ini
+            </button>
+            <button id="copyPrayerWeekBtn" class="btn-success" title="Salin waktu ini ke 7 hari ke depan agar tidak perlu input setiap hari">
+              <span>📋</span> Terapkan ke 7 Hari ke Depan
+            </button>
+          </div>
+        </div>
+
+        <!-- Date Toolbar & Status -->
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 13px; font-weight: 700; color: white;">Pilih Tanggal:</span>
+            <div style="display: flex; gap: 6px;">
+              <button id="prayerDateTodayBtn" class="btn-secondary" style="padding: 6px 12px; font-size: 12px;">Hari Ini</button>
+              <button id="prayerDateTomorrowBtn" class="btn-secondary" style="padding: 6px 12px; font-size: 12px;">Besok</button>
+              <button id="prayerDateDayAfterBtn" class="btn-secondary" style="padding: 6px 12px; font-size: 12px;">Lusa</button>
+            </div>
+            <input type="date" id="prayerDatePicker" class="input-date" style="padding: 6px 12px; font-size: 13px;" title="Pilih Tanggal Jadwal">
+          </div>
+          <div id="prayerConfigStatusBadge" style="display: flex; align-items: center; gap: 8px;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <div id="prayerAlertBox" class="alert-box" style="display: none;"></div>
+
+        <!-- Table Form Container (Always accessible for customization) -->
+        <div class="table-responsive" id="prayerTableContainer">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 160px;">Sesi Shalat</th>
+                <th style="min-width: 200px;">Jam Adzan (Input / Ubah)</th>
+                <th>Mulai Scan</th>
+                <th>🟢 Hijau (Tepat Waktu)</th>
+                <th>🟡 Kuning (Terlambat)</th>
+                <th>🔴 Merah (Terlambat Berat)</th>
+                <th>🚫 Ditutup</th>
+              </tr>
+            </thead>
+            <tbody id="prayerScheduleTbody">
+              <tr><td colspan="7" style="text-align: center;">Memuat jadwal shalat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tips & Guidance Card -->
+        <div style="margin-top: 20px; padding: 14px 18px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; font-size: 13px; color: #93c5fd; display: flex; align-items: flex-start; gap: 12px;">
+          <span style="font-size: 20px; line-height: 1;">💡</span>
+          <div>
+            <strong>Keterangan Aturan Otomatis Absensi Shalat:</strong>
+            <ul style="margin: 6px 0 0 16px; padding: 0; line-height: 1.6; color: #cbd5e1;">
+              <li><strong>Hijau (Tepat Waktu):</strong> Dibuka 10 menit sebelum waktu adzan sampai adzan berkumandang.</li>
+              <li><strong>Kuning (Terlambat):</strong> Sejak waktu adzan sampai 10 menit setelah adzan.</li>
+              <li><strong>Merah (Terlambat Berat):</strong> Menit ke +10 sampai menit ke +40 setelah adzan.</li>
+              <li><strong>Ditutup:</strong> Lewat dari +40 menit setelah adzan, absensi sesi shalat ditutup otomatis.</li>
+              <li>Anda dapat menggunakan tombol <strong>[-5m]</strong> / <strong>[+5m]</strong> di samping kolom jam atau mengetik jam secara langsung, lalu klik <strong>Simpan Jadwal Tanggal Ini</strong>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: RIWAYAT ABSENSI -->
+    <section id="attendanceHistoryTab" class="tab-content">
+      <div class="content-card">
+        <div class="content-card-header">
+          <h2>Riwayat Catatan Absensi</h2>
+          <div style="display: flex; gap: 8px;">
+            <button id="exportCsvBtn" class="btn-success">
+              <span>📥</span> Download Data Absensi CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" id="historySearchInput" class="input-text" placeholder="Cari nama / no. induk..." style="width: 220px;">
+          <select id="historySessionFilter" class="input-select">
+            <option value="">Semua Sesi</option>
+            <option value="MASUK_PAGI">Masuk Pagi</option>
+            <option value="MASUK_SIANG">Masuk Siang</option>
+            <option value="SHALAT_SUBUH">Shalat Subuh</option>
+            <option value="SHALAT_DZUHUR">Shalat Dzuhur</option>
+            <option value="SHALAT_ASHAR">Shalat Ashar</option>
+            <option value="SHALAT_MAGHRIB">Shalat Maghrib</option>
+            <option value="SHALAT_ISYA">Shalat Isya</option>
+          </select>
+          <select id="historyRoleFilter" class="input-select">
+            <option value="">Semua Kategori</option>
+            <option value="SANTRI">Santri</option>
+            <option value="PENGURUS">Pengurus</option>
+          </select>
+          <select id="historyStatusFilter" class="input-select">
+            <option value="">Semua Status</option>
+            <option value="PRESENT">Hadir (Hijau)</option>
+            <option value="LATE">Terlambat (Kuning)</option>
+            <option value="LATE_CRITICAL">Terlambat Berat (Merah)</option>
+          </select>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Waktu Scan</th>
+                <th>Nama Lengkap</th>
+                <th>Kategori</th>
+                <th>Sesi Absensi</th>
+                <th>Status</th>
+                <th style="text-align: right;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="attendancesTbody">
+              <tr><td colspan="7" style="text-align: center;">Memuat riwayat...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: BACKUP & SISTEM -->
+    <section id="systemBackupTab" class="tab-content">
+      <div class="content-card">
+        <div class="content-card-header">
+          <h2>Cadangan (Backup) Database & Ekspor Data</h2>
+          <p style="color: var(--text-secondary); font-size: 13px;">
+            Aman dan dapat diunduh tanpa menghentikan aplikasi. Database asli tidak akan terhapus.
+          </p>
+        </div>
+
+        <!-- Database Metrics -->
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 22px; border-radius: 14px; border: 1px solid var(--card-border); margin-bottom: 24px;">
+          <h3 style="color: white; margin-bottom: 14px; font-size: 16px;">Status Database SQLite</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+              <span style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">File Database</span>
+              <div style="font-size: 15px; font-weight: 700; color: #38bdf8;">data/absensi.db</div>
+            </div>
+            <div>
+              <span style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">Ukuran Database</span>
+              <div id="sysDbSize" style="font-size: 18px; font-weight: 800; color: white;">Memuat...</div>
+            </div>
+            <div>
+              <span style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">Backup Terakhir</span>
+              <div id="sysLastBackup" style="font-size: 14px; font-weight: 700; color: #fbbf24;">Belum pernah</div>
+            </div>
+            <div>
+              <span style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">Total Orang Aktif</span>
+              <div id="sysTotalPersons" style="font-size: 18px; font-weight: 800; color: #10b981;">0</div>
+            </div>
+            <div>
+              <span style="font-size: 12px; color: var(--text-secondary); text-transform: uppercase;">Total Log Absensi</span>
+              <div id="sysTotalAttendances" style="font-size: 18px; font-weight: 800; color: white;">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Buttons -->
+        <div style="display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 30px;">
+          <a href="/api/system/backup" download class="btn-primary" style="padding: 13px 24px; font-size: 15px; text-decoration: none;">
+            <span>💾</span> Download Backup Database (.sqlite)
+          </a>
+          <a href="/api/attendances/export/csv" download class="btn-secondary" style="padding: 13px 20px; font-size: 14px; text-decoration: none;">
+            <span>📥</span> Download Data Absensi CSV
+          </a>
+          <a href="/api/persons/export/csv" download class="btn-secondary" style="padding: 13px 20px; font-size: 14px; text-decoration: none;">
+            <span>👥</span> Download Data Person CSV
+          </a>
+        </div>
+
+        <div style="background: rgba(30, 41, 59, 0.5); padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); font-size: 13px; line-height: 1.6; color: #94a3b8;">
+          <strong style="color: #cbd5e1;">Catatan Keamanan & Pencadangan:</strong>
+          <ul style="margin-left: 20px; margin-top: 6px;">
+            <li>Format file cadangan: <code>backup-absensi-YYYY-MM-DD-HHmmss.sqlite</code>.</li>
+            <li>File hasil backup adalah salinan database SQLite mandiri yang dapat dibuka langsung menggunakan DB Browser for SQLite atau dipulihkan kapan saja.</li>
+            <li>Anda juga dapat menjalankan file <code>backup.bat</code> di desktop komputer untuk mencadangkan database secara otomatis ke folder <code>backup/</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: ADD / EDIT PERSON -->
+  <div id="personModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="personModalTitle">Tambah Orang Baru</h3>
+        <button class="modal-close" data-close="personModal">&times;</button>
+      </div>
+      <form id="personForm">
+        <input type="hidden" id="personFormId">
+        <div class="form-group">
+          <label for="personNomorInduk">Nomor Induk (Unik)</label>
+          <input type="text" id="personNomorInduk" class="input-text" placeholder="Contoh: PT007" required>
+        </div>
+        <div class="form-group">
+          <label for="personNama">Nama Lengkap</label>
+          <input type="text" id="personNama" class="input-text" placeholder="Nama lengkap..." required>
+        </div>
+        <div class="form-group">
+          <label for="personTipe">Kategori</label>
+          <select id="personTipe" class="input-select" required>
+            <option value="SANTRI">Santri</option>
+            <option value="PENGURUS">Pengurus</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="personJurusan">Jurusan / Bidang</label>
+          <input type="text" id="personJurusan" class="input-text" placeholder="Contoh: Bisnis Digital, Programming">
+        </div>
+        <div class="form-group">
+          <label for="personQrCode">Kode QR (Identifier Unik)</label>
+          <input type="text" id="personQrCode" class="input-text" placeholder="Contoh: QR-007" required>
+          <small style="color: var(--text-secondary); font-size: 11px;">Format standar: QR-001, QR-002, dst.</small>
+        </div>
+        <div class="form-group">
+          <label for="personStatus">Status</label>
+          <select id="personStatus" class="input-select">
+            <option value="AKTIF">Aktif</option>
+            <option value="NONAKTIF">Nonaktif</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close="personModal">Batal</button>
+          <button type="submit" class="btn-primary">Simpan Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: VIEW / PRINT QR -->
+  <div id="qrModal" class="modal-overlay">
+    <div class="modal-box" style="text-align: center;">
+      <div class="modal-header">
+        <h3>Kartu QR Person</h3>
+        <button class="modal-close" data-close="qrModal">&times;</button>
+      </div>
+      <div style="background: white; border-radius: 14px; padding: 20px; display: inline-block; margin-bottom: 16px;">
+        <img id="qrModalImage" src="" alt="QR Code" style="width: 220px; height: 220px; display: block;">
+      </div>
+      <h3 id="qrModalName" style="color: white; margin-bottom: 4px;">Nama Lengkap</h3>
+      <p id="qrModalMeta" style="color: var(--text-secondary); font-size: 14px; margin-bottom: 14px;">PT001 - Santri</p>
+      <div style="background: rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 8px; display: inline-block; font-family: monospace; font-size: 16px; color: #38bdf8; margin-bottom: 20px;">
+        <span id="qrModalCode">QR-001</span>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button type="button" class="btn-secondary" data-close="qrModal">Tutup</button>
+        <button type="button" id="printSingleQrBtn" class="btn-primary"><span>🖨️</span> Cetak Kartu Ini</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT PRODUCTIVE RULE -->
+  <div id="ruleModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="ruleModalTitle">Ubah Aturan Jam Produktif</h3>
+        <button class="modal-close" data-close="ruleModal">&times;</button>
+      </div>
+      <div id="ruleModalAlert" class="alert-box error" style="display: none;"></div>
+      <form id="ruleForm">
+        <input type="hidden" id="ruleFormId">
+        <div class="form-group">
+          <label>Nama Sesi</label>
+          <input type="text" id="ruleNamaAbsensi" class="input-text" required readonly style="background: #1e293b;">
+        </div>
+        <div class="form-group">
+          <label>Mulai Scan (Hijau) (HH:mm)</label>
+          <input type="time" id="ruleStartScan" class="input-text" required>
+        </div>
+        <div class="form-group">
+          <label>Target Waktu (HH:mm)</label>
+          <input type="time" id="ruleTargetTime" class="input-text" required>
+        </div>
+        <div class="form-group">
+          <label>Mulai Kuning (Terlambat) (HH:mm)</label>
+          <input type="time" id="ruleYellowStart" class="input-text" required>
+        </div>
+        <div class="form-group">
+          <label>Mulai Merah (Terlambat Berat) (HH:mm)</label>
+          <input type="time" id="ruleRedStart" class="input-text" required>
+        </div>
+        <div class="form-group">
+          <label>Waktu Tutup (HH:mm)</label>
+          <input type="time" id="ruleCloseTime" class="input-text" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" data-close="ruleModal">Batal</button>
+          <button type="submit" class="btn-primary">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Container for Batch Printing ID Cards -->
+  <div id="printCardContainer"></div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Admin - Absensi Pondok Teknologi</title>
+  <meta name="description" content="Halaman Masuk Panel Admin Sistem Absensi Pondok Teknologi">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="icon" type="image/png" href="/images/logo.png">
+  <style>
+    body {
+      background: radial-gradient(ellipse at top, #1e293b 0%, #0b1120 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 36px 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .brand-logo-img {
+      width: 76px;
+      height: 76px;
+      object-fit: contain;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 6px;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+      margin-bottom: 16px;
+    }
+    .brand-header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .brand-header p {
+      font-size: 13px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+    .auth-alert {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+    .auth-alert.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+    .auth-alert.info {
+      display: block;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #7dd3fc;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #ffffff;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: #38bdf8;
+    }
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb, #0284c7);
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+      transition: all 0.2s;
+      margin-top: 6px;
+    }
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #1d4ed8, #0369a1);
+      transform: translateY(-1px);
+    }
+    .bottom-link {
+      display: block;
+      text-align: center;
+      margin-top: 24px;
+      font-size: 13px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .bottom-link:hover {
+      color: #38bdf8;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="brand-header">
+      <img src="/images/logo.png" alt="Logo Pondok Teknologi" class="brand-logo-img">
+      <h1 id="authTitle">PONDOK TEKNOLOGI</h1>
+      <p id="authSubtitle">Masuk ke Panel Pengelolaan Absensi</p>
+    </div>
+
+    <div id="authAlert" class="auth-alert"></div>
+
+    <form id="authForm">
+      <div class="form-group">
+        <label for="usernameInput">Username</label>
+        <input type="text" id="usernameInput" class="form-input" placeholder="Masukkan username" required autofocus autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label for="passwordInput">Password</label>
+        <input type="password" id="passwordInput" class="form-input" placeholder="Masukkan password" required autocomplete="current-password">
+      </div>
+
+      <div class="form-group" id="confirmPasswordGroup" style="display: none;">
+        <label for="confirmPasswordInput">Konfirmasi Password</label>
+        <input type="password" id="confirmPasswordInput" class="form-input" placeholder="Ulangi password" autocomplete="new-password">
+      </div>
+
+      <button type="submit" id="submitBtn" class="btn-submit">Masuk</button>
+    </form>
+
+    <a href="/scanner" class="bottom-link">← Buka Layar Scanner Absensi</a>
+  </div>
+
+  <script>
+    (async function() {
+      const authTitle = document.getElementById('authTitle');
+      const authSubtitle = document.getElementById('authSubtitle');
+      const authAlert = document.getElementById('authAlert');
+      const authForm = document.getElementById('authForm');
+      const usernameInput = document.getElementById('usernameInput');
+      const passwordInput = document.getElementById('passwordInput');
+      const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+      const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+      const submitBtn = document.getElementById('submitBtn');
+
+      let isSetupMode = false;
+
+      function showAlert(msg, type = 'error') {
+        authAlert.textContent = msg;
+        authAlert.className = `auth-alert ${type}`;
+      }
+
+      function clearAlert() {
+        authAlert.textContent = '';
+        authAlert.className = 'auth-alert';
+      }
+
+      // Check auth status
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+
+        if (data.is_authenticated) {
+          // Already logged in, redirect to admin dashboard
+          window.location.href = '/admin/dashboard';
+          return;
+        }
+
+        if (!data.has_admin) {
+          // Setup mode: First admin account creation
+          isSetupMode = true;
+          authTitle.textContent = 'SETUP ADMIN PERTAMA';
+          authSubtitle.textContent = 'Buat akun administrator pertama Anda';
+          confirmPasswordGroup.style.display = 'block';
+          submitBtn.textContent = 'Buat Akun & Masuk';
+          showAlert('Selamat datang! Belum ada akun admin terdaftar. Silakan buat akun admin pertama Anda.', 'info');
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+      }
+
+      authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlert();
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (!username || !password) {
+          showAlert('Username dan password wajib diisi');
+          return;
+        }
+
+        if (isSetupMode) {
+          const confirm = confirmPasswordInput.value.trim();
+          if (password !== confirm) {
+            showAlert('Password dan konfirmasi password tidak cocok');
+            return;
+          }
+          if (password.length < 4) {
+            showAlert('Password minimal 4 karakter');
+            return;
+          }
+
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Membuat akun...';
+
+          try {
+            const res = await fetch('/api/auth/setup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (data.success) {
+              window.location.href = '/admin/dashboard';
+            } else {
+              showAlert(data.error || 'Gagal membuat akun');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Buat Akun & Masuk';
+            }
+          } catch (err) {
+            showAlert('Gagal terhubung ke server');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Buat Akun & Masuk';
+          }
+        } else {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Memeriksa...';
+
+          try {
+            const res = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (data.success) {
+              window.location.href = '/admin/dashboard';
+            } else {
+              showAlert(data.error || 'Username atau password salah');
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Masuk';
+            }
+          } catch (err) {
+            showAlert('Gagal terhubung ke server');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Masuk';
+          }
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

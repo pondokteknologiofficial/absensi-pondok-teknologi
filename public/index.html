@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absensi Pondok Teknologi - Layar Scanner</title>
+  <meta name="description" content="Sistem Absensi Santri dan Pengurus Pondok Teknologi menggunakan QR Scanner 2D USB">
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/kiosk.css">
+  <link rel="icon" type="image/png" href="/images/logo.png">
+</head>
+<body>
+  <div class="ambient-glow"></div>
+
+  <!-- Kiosk Header -->
+  <header class="kiosk-header">
+    <div class="brand-container">
+      <div class="brand-logo">
+        <img src="/images/logo.png" alt="Logo Pondok Teknologi">
+      </div>
+      <div class="brand-info">
+        <h1>PONDOK TEKNOLOGI</h1>
+        <p>Sistem Absensi Otomatis</p>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div id="activeSessionBadge" class="active-session-pill">
+        <span class="pulse-dot"></span>
+        <span id="activeSessionText">Memuat Sesi Absensi...</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="clock-widget">
+        <div id="liveClock" class="clock-time">00:00:00</div>
+        <div id="liveDate" class="clock-date">Memuat tanggal...</div>
+      </div>
+      <button id="soundToggleBtn" class="sound-toggle-btn" title="Aktif/Nonaktifkan Suara">
+        <span id="soundIcon">🔊</span>
+      </button>
+      <a href="/admin" class="admin-link-btn" id="toAdminBtn">
+        ⚙️ Admin Panel
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Kiosk Body -->
+  <main class="kiosk-main" id="kioskContainer">
+    <!-- Scanner invisible input field (always kept ready) -->
+    <input type="text" id="scannerInput" autocomplete="off" autofocus aria-label="Input Barcode Scanner">
+
+    <!-- Pilihan Metode Scanner: Camera vs USB -->
+    <div class="scanner-mode-selector">
+      <button id="modeCameraBtn" class="mode-btn active" title="Gunakan Kamera/Webcam untuk scan QR">
+        <span class="mode-badge-indicator"></span> 📷 Kamera (Webcam)
+      </button>
+      <button id="modeUsbBtn" class="mode-btn" title="Gunakan Scanner USB Kasir">
+        🔌 Scanner USB
+      </button>
+    </div>
+
+    <!-- 1. IDLE STATE: SIAP SCAN QR -->
+    <div id="idleScreen" class="screen-state">
+      <div class="idle-card">
+
+        <!-- A. Camera Scanner Viewfinder -->
+        <div id="cameraScannerWrapper" class="camera-scanner-wrapper">
+          <div class="camera-viewfinder-frame">
+            <div id="cameraReader"></div>
+            <div class="camera-reticle">
+              <div class="camera-guide-box">
+                <div class="scanner-corner corner-tl"></div>
+                <div class="scanner-corner corner-tr"></div>
+                <div class="scanner-corner corner-bl"></div>
+                <div class="scanner-corner corner-br"></div>
+                <div class="camera-laser-line"></div>
+              </div>
+            </div>
+            <div id="cameraErrorBox" class="camera-error-box">
+              <span style="font-size: 32px; margin-bottom: 8px;">📷⚠️</span>
+              <p style="font-size: 14px; font-weight: 600; margin-bottom: 12px;" id="cameraErrorMessage">
+                Kamera tidak terdeteksi atau izin belum diberikan.
+              </p>
+              <button id="cameraRetryBtn" class="camera-reload-btn">Coba Akses Kamera Lagi</button>
+              <p style="font-size: 12px; color: #94a3b8; margin-top: 10px;">Atau gunakan opsi <strong>Scanner USB</strong> di atas.</p>
+            </div>
+          </div>
+
+          <div class="camera-controls-bar" id="cameraControlsBar">
+            <select id="cameraSelect" class="camera-select" title="Pilih Kamera"></select>
+            <button id="cameraReloadBtn" class="camera-reload-btn" title="Muat ulang kamera">🔄 Muat Ulang</button>
+          </div>
+        </div>
+
+        <!-- B. USB Scanner Illustration Frame -->
+        <div id="usbScannerFrame" class="qr-scanner-frame" style="display: none;">
+          <div class="scanner-corner corner-tl"></div>
+          <div class="scanner-corner corner-tr"></div>
+          <div class="scanner-corner corner-bl"></div>
+          <div class="scanner-corner corner-br"></div>
+          <div class="scanner-laser-line"></div>
+          <svg class="qr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+            <path d="M7 17h.01"></path>
+            <path d="M17 17h.01"></path>
+            <path d="M7 7h.01"></path>
+            <path d="M17 7h.01"></path>
+          </svg>
+        </div>
+
+        <h2 class="idle-title" id="idleTitle">SIAP SCAN QR</h2>
+        <p class="idle-subtitle" id="idleSubtitle">Arahkan kartu QR code Anda ke arah kamera komputer. Absensi akan langsung tercatat otomatis.</p>
+
+        <div class="active-session-banner-large" id="idleSessionDetail">
+          <span id="idleSessionName">Sesi Hari Ini</span>
+          <span class="time-badge" id="idleSessionHours">--:-- - --:--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. RESULT STATE: FEEDBACK SCAN -->
+    <div id="resultScreen" class="screen-state" style="display: none;">
+      <div id="resultCard" class="result-card status-green">
+        <div id="resultBadge" class="status-badge-giant">
+          <span id="resultIcon">✅</span>
+          <span id="resultStatusText">ABSEN BERHASIL</span>
+        </div>
+
+        <div id="resultPersonName" class="person-name-giant">Nama Lengkap</div>
+
+        <div class="person-meta" id="resultPersonMeta">
+          <span id="resultRolePill" class="role-pill santri">Santri</span>
+          <span id="resultJurusan" class="jurusan-text">Bisnis Digital</span>
+          <span id="resultNomorInduk" class="jurusan-text" style="opacity: 0.7;">PT001</span>
+        </div>
+
+        <div class="attendance-details-grid" id="resultDetailsGrid">
+          <div class="detail-item">
+            <span class="detail-label">Jenis Absensi</span>
+            <span id="resultSessionName" class="detail-value">Masuk Pagi</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Waktu Scan</span>
+            <span id="resultScanTime" class="detail-value">07:53:12</span>
+          </div>
+        </div>
+
+        <p id="resultMessage" class="result-message">Absensi berhasil tercatat.</p>
+
+        <!-- Auto Reset Progress Bar -->
+        <div class="countdown-container">
+          <div class="countdown-bar-outer">
+            <div id="countdownBar" class="countdown-bar-inner"></div>
+          </div>
+          <span id="countdownText" class="countdown-text">Kembali ke layar scan dalam 4 detik...</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Simulation / Tester Drawer -->
+  <footer class="simulation-drawer collapsed" id="simulationDrawer">
+    <div class="sim-toggle-header" id="simToggleBtn">
+      <div class="sim-toggle-title">
+        <span>🧪 Toolbar Uji Coba & Simulasi Cepat (Klik untuk Buka/Tutup)</span>
+      </div>
+      <span class="sim-toggle-btn" id="simArrow">▲ Buka Pengujian</span>
+    </div>
+
+    <div class="sim-content">
+      <div class="sim-group">
+        <span class="sim-label">Simulasi Waktu:</span>
+        <select id="simTimeSelect" class="sim-time-select">
+          <option value="">Waktu Nyata PC (Realtime)</option>
+          <optgroup label="Sesi Masuk Pagi (Target 08:00)">
+            <option value="07:30:00">07:30:00 (Belum Waktunya)</option>
+            <option value="07:50:00">07:50:00 (🟢 Hijau / Hadir)</option>
+            <option value="08:05:00">08:05:00 (🟡 Kuning / Terlambat)</option>
+            <option value="08:25:00">08:25:00 (🔴 Merah / Terlambat Berat)</option>
+            <option value="08:45:00">08:45:00 (Ditutup)</option>
+          </optgroup>
+          <optgroup label="Sesi Masuk Siang (Target 13:00)">
+            <option value="12:40:00">12:40:00 (Belum Waktunya)</option>
+            <option value="12:55:00">12:55:00 (🟢 Hijau / Hadir)</option>
+            <option value="13:10:00">13:10:00 (🟡 Kuning / Terlambat)</option>
+            <option value="13:30:00">13:30:00 (🔴 Merah / Terlambat Berat)</option>
+            <option value="13:55:00">13:55:00 (Ditutup)</option>
+          </optgroup>
+          <optgroup label="Sesi Shalat Subuh (Adzan 04:20)">
+            <option value="04:05:00">04:05:00 (Belum Waktunya)</option>
+            <option value="04:15:00">04:15:00 (🟢 Hijau / Hadir)</option>
+            <option value="04:25:00">04:25:00 (🟡 Kuning / Terlambat)</option>
+            <option value="04:45:00">04:45:00 (🔴 Merah / Terlambat Berat)</option>
+            <option value="05:05:00">05:05:00 (Ditutup)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="sim-group">
+        <span class="sim-label">Klik Cepat QR Sample:</span>
+        <button class="sim-btn" data-qr="QR-001">Ryan (Pengurus)</button>
+        <button class="sim-btn" data-qr="QR-002">Ibnu (Pengurus)</button>
+        <button class="sim-btn" data-qr="QR-003">Sulaiman (Pengurus)</button>
+        <button class="sim-btn" data-qr="QR-004">Farhan (Santri)</button>
+        <button class="sim-btn" data-qr="QR-005">Haidar (Santri)</button>
+        <button class="sim-btn" data-qr="QR-006">Razqa (Santri)</button>
+        <button class="sim-btn" style="border-color: #ef4444; color: #f87171;" data-qr="QR-999">QR Tak Dikenal</button>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/html5-qrcode.min.js"></script>
+  <script src="/js/kiosk.js"></script>
+</body>
+</html>
