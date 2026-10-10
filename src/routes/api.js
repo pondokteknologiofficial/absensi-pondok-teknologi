@@ -585,6 +585,32 @@ router.patch('/persons/:id/toggle-status', async (req, res) => {
   }
 });
 
+router.delete('/persons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const person = await db.queryOne('SELECT * FROM persons WHERE id = ?', [id]);
+    if (!person) {
+      return res.status(404).json({ error: 'Data santri/pengurus tidak ditemukan' });
+    }
+
+    // 1. Hapus semua riwayat absensi terkait person ini agar tidak melanggar foreign key constraint
+    await db.run('DELETE FROM attendances WHERE person_id = ?', [id]);
+
+    // 2. Hapus data person
+    await db.run('DELETE FROM persons WHERE id = ?', [id]);
+
+    db.save();
+
+    res.json({
+      success: true,
+      message: `Data ${person.nama} (${person.nomor_induk}) berhasil dihapus!`
+    });
+  } catch (err) {
+    console.error('delete person error:', err);
+    res.status(500).json({ error: 'Gagal menghapus data person' });
+  }
+});
+
 // Single QR Image
 router.get('/persons/:id/qr', async (req, res) => {
   try {

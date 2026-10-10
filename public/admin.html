@@ -540,11 +540,17 @@
             <option value="NONAKTIF">Nonaktif</option>
           </select>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" data-close="personModal">Batal</button>
-          <button type="submit" class="btn-primary">Simpan Data</button>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" id="deletePersonModalBtn" class="btn-secondary" style="display: none; color: #f87171; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08);" title="Hapus data personil ini">
+            🗑️ Hapus Orang
+          </button>
+          <div style="display: flex; gap: 8px; margin-left: auto;">
+            <button type="button" class="btn-secondary" data-close="personModal">Batal</button>
+            <button type="submit" class="btn-primary">Simpan Data</button>
+          </div>
         </div>
       </form>
+
     </div>
   </div>
 

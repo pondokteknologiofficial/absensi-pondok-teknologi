@@ -51,6 +51,7 @@
   const personQrCode = document.getElementById('personQrCode');
   const personStatus = document.getElementById('personStatus');
   const personModalTitle = document.getElementById('personModalTitle');
+  const deletePersonModalBtn = document.getElementById('deletePersonModalBtn');
 
   const qrModal = document.getElementById('qrModal');
   const qrModalImage = document.getElementById('qrModalImage');
@@ -387,8 +388,11 @@
             <button class="btn-secondary view-qr-btn" data-id="${p.id}" style="padding: 5px 10px; font-size: 12px; margin-right: 4px;">
               👁️ QR
             </button>
-            <button class="btn-secondary edit-person-btn" data-person='${JSON.stringify(p).replace(/'/g, "&apos;")}' style="padding: 5px 10px; font-size: 12px;">
+            <button class="btn-secondary edit-person-btn" data-person='${JSON.stringify(p).replace(/'/g, "&apos;")}' style="padding: 5px 10px; font-size: 12px; margin-right: 4px;">
               ✏️ Edit
+            </button>
+            <button class="btn-secondary delete-person-btn" data-id="${p.id}" data-nama="${escapeHtml(p.nama)}" data-nomor="${escapeHtml(p.nomor_induk)}" style="padding: 5px 10px; font-size: 12px; color: #f87171; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08);" title="Hapus data personil ini">
+              🗑️ Hapus
             </button>
           </td>
         </tr>
@@ -415,6 +419,32 @@
           openEditPersonModal(person);
         });
       });
+
+      document.querySelectorAll('.delete-person-btn').forEach(b => {
+        b.addEventListener('click', async (e) => {
+          const btn = e.currentTarget;
+          const id = btn.getAttribute('data-id');
+          const nama = btn.getAttribute('data-nama');
+          const nomor = btn.getAttribute('data-nomor');
+
+          if (!confirm(`Hapus data ${nama} (${nomor})?\n\nPerhatian: Riwayat absensi terkait orang ini juga akan ikut dihapus.`)) {
+            return;
+          }
+
+          try {
+            const res = await fetch(`/api/persons/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) {
+              alert(data.error || 'Gagal menghapus data personil');
+              return;
+            }
+            loadPersons();
+            loadDashboard();
+          } catch (err) {
+            alert('Terjadi kesalahan koneksi saat menghapus data');
+          }
+        });
+      });
     } catch (err) {
       console.error('Failed to load persons:', err);
     }
@@ -433,6 +463,7 @@
     personJurusan.value = '';
     personQrCode.value = '';
     personStatus.value = 'AKTIF';
+    if (deletePersonModalBtn) deletePersonModalBtn.style.display = 'none';
     openModal(personModal);
   });
 
@@ -445,7 +476,39 @@
     personJurusan.value = p.jurusan || '';
     personQrCode.value = p.qr_code;
     personStatus.value = p.status;
+    if (deletePersonModalBtn) {
+      deletePersonModalBtn.style.display = 'inline-block';
+      deletePersonModalBtn.setAttribute('data-id', p.id);
+      deletePersonModalBtn.setAttribute('data-nama', p.nama);
+      deletePersonModalBtn.setAttribute('data-nomor', p.nomor_induk);
+    }
     openModal(personModal);
+  }
+
+  if (deletePersonModalBtn) {
+    deletePersonModalBtn.addEventListener('click', async () => {
+      const id = deletePersonModalBtn.getAttribute('data-id');
+      const nama = deletePersonModalBtn.getAttribute('data-nama');
+      const nomor = deletePersonModalBtn.getAttribute('data-nomor');
+
+      if (!confirm(`Hapus data ${nama} (${nomor})?\n\nPerhatian: Riwayat absensi terkait orang ini juga akan ikut dihapus.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/persons/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || 'Gagal menghapus data personil');
+          return;
+        }
+        closeModal(personModal);
+        loadPersons();
+        loadDashboard();
+      } catch (err) {
+        alert('Terjadi kesalahan koneksi saat menghapus data');
+      }
+    });
   }
 
   personForm.addEventListener('submit', async (e) => {
