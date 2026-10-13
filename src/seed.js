@@ -28,6 +28,14 @@ const SAMPLE_PERSONS = [
     qr_code: 'QR-003',
     status: 'AKTIF'
   },
+  {
+    nomor_induk: 'PT008',
+    nama: 'Reno Aristya Febrian',
+    tipe_person: 'PENGURUS',
+    jurusan: 'Pengurus',
+    qr_code: 'QR-008',
+    status: 'AKTIF'
+  },
   // SANTRI
   {
     nomor_induk: 'PT004',
@@ -51,6 +59,62 @@ const SAMPLE_PERSONS = [
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
     qr_code: 'QR-006',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT007',
+    nama: 'Abu Bakar',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    qr_code: 'QR-007',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT009',
+    nama: 'M. Fahmi Muftiadi',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    qr_code: 'QR-009',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT010',
+    nama: 'Ali Abdullah',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    qr_code: 'QR-010',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT011',
+    nama: 'Abdul Hafizh',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    qr_code: 'QR-011',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT012',
+    nama: 'Muhammad Akbar',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    qr_code: 'QR-012',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT013',
+    nama: 'Almay S. Rasyidi',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    qr_code: 'QR-013',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT014',
+    nama: 'Abdullah Musa',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    qr_code: 'QR-014',
     status: 'AKTIF'
   }
 ];
@@ -91,17 +155,14 @@ const DEFAULT_PRAYER_TIMES = {
 async function seedDatabase(force = false) {
   await db.initDb();
 
-  // 1. Seed Persons
-  const personCount = await db.queryOne('SELECT COUNT(*) as cnt FROM persons');
-  if (force || !personCount || Number(personCount.cnt) === 0) {
-    for (const p of SAMPLE_PERSONS) {
-      const existing = await db.queryOne('SELECT id FROM persons WHERE nomor_induk = ? OR qr_code = ?', [p.nomor_induk, p.qr_code]);
-      if (!existing) {
-        await db.run(`
-          INSERT INTO persons (nomor_induk, nama, tipe_person, jurusan, qr_code, status)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `, [p.nomor_induk, p.nama, p.tipe_person, p.jurusan, p.qr_code, p.status]);
-      }
+  // 1. Seed Persons (Pastikan semua sample persons terdaftar tanpa duplikasi)
+  for (const p of SAMPLE_PERSONS) {
+    const existing = await db.queryOne('SELECT id FROM persons WHERE nomor_induk = ? OR qr_code = ?', [p.nomor_induk, p.qr_code]);
+    if (!existing) {
+      await db.run(`
+        INSERT INTO persons (nomor_induk, nama, tipe_person, jurusan, qr_code, status)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [p.nomor_induk, p.nama, p.tipe_person, p.jurusan, p.qr_code, p.status]);
     }
   }
 
