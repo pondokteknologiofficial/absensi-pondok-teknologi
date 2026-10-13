@@ -33,12 +33,17 @@
   const recentScansTbody = document.getElementById('recentScansTbody');
 
   // Persons Elements
+  const personsTable = document.getElementById('personsTable');
   const personsTbody = document.getElementById('personsTbody');
   const personSearchInput = document.getElementById('personSearchInput');
+  const personYayasanFilter = document.getElementById('personYayasanFilter');
   const personRoleFilter = document.getElementById('personRoleFilter');
   const personStatusFilter = document.getElementById('personStatusFilter');
+  const personSortFilter = document.getElementById('personSortFilter');
   const addPersonBtn = document.getElementById('addPersonBtn');
   const batchPrintQrBtn = document.getElementById('batchPrintQrBtn');
+
+  let personSort = { col: null, order: 'ASC' };
 
   // Modals
   const personModal = document.getElementById('personModal');
@@ -47,6 +52,7 @@
   const personNomorInduk = document.getElementById('personNomorInduk');
   const personNama = document.getElementById('personNama');
   const personTipe = document.getElementById('personTipe');
+  const personYayasan = document.getElementById('personYayasan');
   const personJurusan = document.getElementById('personJurusan');
   const personQrCode = document.getElementById('personQrCode');
   const personStatus = document.getElementById('personStatus');
@@ -355,21 +361,40 @@
   async function loadPersons() {
     const search = personSearchInput.value.trim();
     const tipe = personRoleFilter.value;
+    const yayasan = personYayasanFilter ? personYayasanFilter.value : '';
     const status = personStatusFilter.value;
 
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (tipe) params.append('tipe', tipe);
+    if (yayasan) params.append('yayasan', yayasan);
     if (status) params.append('status', status);
+    if (personSort.col) {
+      params.append('sort_by', personSort.col);
+      params.append('sort_order', personSort.order);
+    }
 
     try {
       const res = await fetch(`/api/persons?${params.toString()}`);
       if (res.status === 401) { window.location.href = '/login'; return; }
-      const persons = await res.json();
+      let persons = await res.json();
 
       if (!persons || persons.length === 0) {
-        personsTbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Tidak ada data orang yang ditemukan.</td></tr>';
+        personsTbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Tidak ada data orang yang ditemukan.</td></tr>';
         return;
+      }
+
+      // Client-side sort guarantee
+      if (personSort.col && Array.isArray(persons)) {
+        persons.sort((a, b) => {
+          let valA = a[personSort.col] ?? '';
+          let valB = b[personSort.col] ?? '';
+          if (typeof valA === 'string') valA = valA.toLowerCase();
+          if (typeof valB === 'string') valB = valB.toLowerCase();
+          if (valA < valB) return personSort.order === 'ASC' ? -1 : 1;
+          if (valA > valB) return personSort.order === 'ASC' ? 1 : -1;
+          return 0;
+        });
       }
 
       personsTbody.innerHTML = persons.map(p => `
@@ -377,6 +402,7 @@
           <td><code>${escapeHtml(p.nomor_induk)}</code></td>
           <td><strong>${escapeHtml(p.nama)}</strong></td>
           <td><span class="badge ${p.tipe_person === 'PENGURUS' ? 'badge-blue' : 'badge-purple'}">${p.tipe_person}</span></td>
+          <td><span class="badge" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); font-size: 11px;">${escapeHtml(p.yayasan || 'Pondok Teknologi')}</span></td>
           <td>${escapeHtml(p.jurusan || '-')}</td>
           <td><code>${escapeHtml(p.qr_code)}</code></td>
           <td>
@@ -450,7 +476,60 @@
     }
   }
 
+  function updatePersonSortHeaders() {
+    if (!personsTable) return;
+    personsTable.querySelectorAll('th.sortable').forEach(th => {
+      const col = th.getAttribute('data-sort');
+      const indicator = th.querySelector('.sort-indicator');
+      th.classList.remove('active-sort');
+      if (col === personSort.col) {
+        th.classList.add('active-sort');
+        if (indicator) indicator.textContent = personSort.order === 'ASC' ? '▲' : '▼';
+      } else {
+        if (indicator) indicator.textContent = '⇅';
+      }
+    });
+  }
+
+  // Header click listener for interactive sorting
+  if (personsTable) {
+    personsTable.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.getAttribute('data-sort');
+        if (personSort.col === col) {
+          personSort.order = personSort.order === 'ASC' ? 'DESC' : 'ASC';
+        } else {
+          personSort.col = col;
+          personSort.order = 'ASC';
+        }
+
+        if (personSortFilter) {
+          const optVal = `${personSort.col}:${personSort.order}`;
+          personSortFilter.value = personSortFilter.querySelector(`option[value="${optVal}"]`) ? optVal : '';
+        }
+
+        updatePersonSortHeaders();
+        loadPersons();
+      });
+    });
+  }
+
+  if (personSortFilter) {
+    personSortFilter.addEventListener('change', () => {
+      const val = personSortFilter.value;
+      if (val) {
+        const [col, order] = val.split(':');
+        personSort = { col, order };
+      } else {
+        personSort = { col: null, order: 'ASC' };
+      }
+      updatePersonSortHeaders();
+      loadPersons();
+    });
+  }
+
   personSearchInput.addEventListener('input', debounce(loadPersons, 300));
+  if (personYayasanFilter) personYayasanFilter.addEventListener('change', loadPersons);
   personRoleFilter.addEventListener('change', loadPersons);
   personStatusFilter.addEventListener('change', loadPersons);
 
@@ -460,6 +539,7 @@
     personNomorInduk.value = '';
     personNama.value = '';
     personTipe.value = 'SANTRI';
+    if (personYayasan) personYayasan.value = 'Pondok Teknologi';
     personJurusan.value = '';
     personQrCode.value = '';
     personStatus.value = 'AKTIF';
@@ -473,6 +553,7 @@
     personNomorInduk.value = p.nomor_induk;
     personNama.value = p.nama;
     personTipe.value = p.tipe_person;
+    if (personYayasan) personYayasan.value = p.yayasan || 'Pondok Teknologi';
     personJurusan.value = p.jurusan || '';
     personQrCode.value = p.qr_code;
     personStatus.value = p.status;
@@ -518,6 +599,7 @@
       nomor_induk: personNomorInduk.value.trim(),
       nama: personNama.value.trim(),
       tipe_person: personTipe.value,
+      yayasan: personYayasan ? personYayasan.value : 'Pondok Teknologi',
       jurusan: personJurusan.value.trim(),
       qr_code: personQrCode.value.trim(),
       status: personStatus.value
@@ -1089,11 +1171,27 @@
     if (session_code) params.append('session_code', session_code);
     if (tipe_person) params.append('tipe_person', tipe_person);
     if (status) params.append('status', status);
+    if (attendanceSort.col) {
+      params.append('sort_by', attendanceSort.col);
+      params.append('sort_order', attendanceSort.order);
+    }
 
     try {
       const res = await fetch(`/api/attendances?${params.toString()}`);
       if (res.status === 401) { window.location.href = '/login'; return; }
-      const attendances = await res.json();
+      let attendances = await res.json();
+
+      if (attendanceSort.col && Array.isArray(attendances)) {
+        attendances.sort((a, b) => {
+          let valA = a[attendanceSort.col] ?? '';
+          let valB = b[attendanceSort.col] ?? '';
+          if (typeof valA === 'string') valA = valA.toLowerCase();
+          if (typeof valB === 'string') valB = valB.toLowerCase();
+          if (valA < valB) return attendanceSort.order === 'ASC' ? -1 : 1;
+          if (valA > valB) return attendanceSort.order === 'ASC' ? 1 : -1;
+          return 0;
+        });
+      }
 
       if (!attendances || attendances.length === 0) {
         attendancesTbody.innerHTML = `
@@ -1141,6 +1239,62 @@
     } catch (err) {
       console.error('Failed to load attendances:', err);
     }
+  }
+
+  // Attendances Elements & Sorting
+  const attendancesTable = document.getElementById('attendancesTable');
+  const historySortFilter = document.getElementById('historySortFilter');
+  let attendanceSort = { col: null, order: 'DESC' };
+
+  function updateAttendanceSortHeaders() {
+    if (!attendancesTable) return;
+    attendancesTable.querySelectorAll('th.sortable').forEach(th => {
+      const col = th.getAttribute('data-sort');
+      const indicator = th.querySelector('.sort-indicator');
+      th.classList.remove('active-sort');
+      if (col === attendanceSort.col) {
+        th.classList.add('active-sort');
+        if (indicator) indicator.textContent = attendanceSort.order === 'ASC' ? '▲' : '▼';
+      } else {
+        if (indicator) indicator.textContent = '⇅';
+      }
+    });
+  }
+
+  if (attendancesTable) {
+    attendancesTable.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.getAttribute('data-sort');
+        if (attendanceSort.col === col) {
+          attendanceSort.order = attendanceSort.order === 'ASC' ? 'DESC' : 'ASC';
+        } else {
+          attendanceSort.col = col;
+          attendanceSort.order = (col === 'tanggal' || col === 'waktu_scan') ? 'DESC' : 'ASC';
+        }
+
+        if (historySortFilter) {
+          const optVal = `${attendanceSort.col}:${attendanceSort.order}`;
+          historySortFilter.value = historySortFilter.querySelector(`option[value="${optVal}"]`) ? optVal : '';
+        }
+
+        updateAttendanceSortHeaders();
+        loadAttendances();
+      });
+    });
+  }
+
+  if (historySortFilter) {
+    historySortFilter.addEventListener('change', () => {
+      const val = historySortFilter.value;
+      if (val) {
+        const [col, order] = val.split(':');
+        attendanceSort = { col, order };
+      } else {
+        attendanceSort = { col: null, order: 'DESC' };
+      }
+      updateAttendanceSortHeaders();
+      loadAttendances();
+    });
   }
 
   historySearchInput.addEventListener('input', debounce(loadAttendances, 300));

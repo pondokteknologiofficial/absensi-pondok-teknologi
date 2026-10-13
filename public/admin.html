@@ -221,7 +221,13 @@
         </div>
 
         <div class="filter-bar">
-          <input type="text" id="personSearchInput" class="input-text" placeholder="Cari nama, nomor induk, QR..." style="width: 260px;">
+          <input type="text" id="personSearchInput" class="input-text" placeholder="Cari nama, nomor induk, QR..." style="width: 240px;">
+          <select id="personYayasanFilter" class="input-select">
+            <option value="">Semua Yayasan</option>
+            <option value="Pondok Teknologi">Pondok Teknologi</option>
+            <option value="Pondok Enterpreneur">Pondok Enterpreneur</option>
+            <option value="Pondok Anak Pengusaha Indonesia">Pondok Anak Pengusaha Indonesia</option>
+          </select>
           <select id="personRoleFilter" class="input-select">
             <option value="">Semua Kategori</option>
             <option value="SANTRI">Santri</option>
@@ -232,23 +238,55 @@
             <option value="AKTIF">Aktif</option>
             <option value="NONAKTIF">Nonaktif</option>
           </select>
+          <select id="personSortFilter" class="input-select" title="Urutkan Data (ASC / DESC)" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+            <option value="">↕️ Urutkan Kolom (Default)</option>
+            <option value="nomor_induk:ASC">No. Induk (A-Z / Naik)</option>
+            <option value="nomor_induk:DESC">No. Induk (Z-A / Turun)</option>
+            <option value="nama:ASC">Nama Lengkap (A-Z / Naik)</option>
+            <option value="nama:DESC">Nama Lengkap (Z-A / Turun)</option>
+            <option value="tipe_person:DESC">Kategori (Pengurus duluan)</option>
+            <option value="tipe_person:ASC">Kategori (Santri duluan)</option>
+            <option value="yayasan:ASC">Yayasan (A-Z / Naik)</option>
+            <option value="yayasan:DESC">Yayasan (Z-A / Turun)</option>
+            <option value="jurusan:ASC">Jurusan (A-Z / Naik)</option>
+            <option value="jurusan:DESC">Jurusan (Z-A / Turun)</option>
+            <option value="qr_code:ASC">Kode QR (A-Z / Naik)</option>
+            <option value="qr_code:DESC">Kode QR (Z-A / Turun)</option>
+            <option value="status:ASC">Status (Aktif duluan)</option>
+            <option value="status:DESC">Status (Nonaktif duluan)</option>
+          </select>
         </div>
 
         <div class="table-responsive">
-          <table class="data-table">
+          <table class="data-table" id="personsTable">
             <thead>
               <tr>
-                <th>No. Induk</th>
-                <th>Nama Lengkap</th>
-                <th>Kategori</th>
-                <th>Jurusan</th>
-                <th>Kode QR</th>
-                <th>Status</th>
+                <th class="sortable" data-sort="nomor_induk" title="Klik untuk mengurutkan No. Induk Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>No. Induk</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="nama" title="Klik untuk mengurutkan Nama Lengkap Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Nama Lengkap</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="tipe_person" title="Klik untuk mengurutkan Kategori Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Kategori</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="yayasan" title="Klik untuk mengurutkan Yayasan Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Yayasan</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="jurusan" title="Klik untuk mengurutkan Jurusan Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Jurusan</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="qr_code" title="Klik untuk mengurutkan Kode QR Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Kode QR</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="status" title="Klik untuk mengurutkan Status Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Status</span><span class="sort-indicator">⇅</span></div>
+                </th>
                 <th style="text-align: right;">Aksi</th>
               </tr>
             </thead>
             <tbody id="personsTbody">
-              <tr><td colspan="7" style="text-align: center;">Memuat data...</td></tr>
+              <tr><td colspan="8" style="text-align: center;">Memuat data...</td></tr>
             </tbody>
           </table>
         </div>
@@ -415,18 +453,40 @@
             <option value="LATE">Terlambat (Kuning)</option>
             <option value="LATE_CRITICAL">Terlambat Berat (Merah)</option>
           </select>
+          <select id="historySortFilter" class="input-select" title="Urutkan Catatan Absensi" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+            <option value="">↕️ Urutkan Riwayat (Default)</option>
+            <option value="waktu_scan:DESC">Waktu Scan (Terbaru)</option>
+            <option value="waktu_scan:ASC">Waktu Scan (Terlama)</option>
+            <option value="tanggal:DESC">Tanggal (Terbaru)</option>
+            <option value="tanggal:ASC">Tanggal (Terlama)</option>
+            <option value="nama:ASC">Nama Lengkap (A-Z)</option>
+            <option value="nama:DESC">Nama Lengkap (Z-A)</option>
+            <option value="status:ASC">Status (A-Z)</option>
+          </select>
         </div>
 
         <div class="table-responsive">
-          <table class="data-table">
+          <table class="data-table" id="attendancesTable">
             <thead>
               <tr>
-                <th>Tanggal</th>
-                <th>Waktu Scan</th>
-                <th>Nama Lengkap</th>
-                <th>Kategori</th>
-                <th>Sesi Absensi</th>
-                <th>Status</th>
+                <th class="sortable" data-sort="tanggal" title="Klik untuk urutkan Tanggal Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Tanggal</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="waktu_scan" title="Klik untuk urutkan Waktu Scan Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Waktu Scan</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="nama" title="Klik untuk urutkan Nama Lengkap Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Nama Lengkap</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="tipe_person" title="Klik untuk urutkan Kategori Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Kategori</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="session_code" title="Klik untuk urutkan Sesi Absensi Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Sesi Absensi</span><span class="sort-indicator">⇅</span></div>
+                </th>
+                <th class="sortable" data-sort="status" title="Klik untuk urutkan Status Ascending/Descending">
+                  <div class="th-sort-wrapper"><span>Status</span><span class="sort-indicator">⇅</span></div>
+                </th>
                 <th style="text-align: right;">Aksi</th>
               </tr>
             </thead>
@@ -522,6 +582,14 @@
           <select id="personTipe" class="input-select" required>
             <option value="SANTRI">Santri</option>
             <option value="PENGURUS">Pengurus</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="personYayasan">Yayasan</label>
+          <select id="personYayasan" class="input-select" required>
+            <option value="Pondok Teknologi">Pondok Teknologi</option>
+            <option value="Pondok Enterpreneur">Pondok Enterpreneur</option>
+            <option value="Pondok Anak Pengusaha Indonesia">Pondok Anak Pengusaha Indonesia</option>
           </select>
         </div>
         <div class="form-group">

@@ -364,7 +364,7 @@ async function runTests() {
     const res = await processScanForTest({ qr_code: 'QR-002', test_time: '08:05:00', test_date: testDate });
     assert.strictEqual(res.success, true);
     assert.strictEqual(res.status, 'LATE');
-    assert.strictEqual(res.person.nama, 'M Nur Ibnu Hubab');
+    assert.ok(res.person.nama === 'Muhammad Nur Ibnu Hubab' || res.person.nama === 'M Nur Ibnu Hubab');
   });
 
   // Test Scan Merah Masuk Pagi (08:25)

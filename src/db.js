@@ -66,10 +66,13 @@ async function initDb() {
         connectionTimeoutMillis: 10000
       });
 
-      // Uji koneksi awal
+      // Uji koneksi awal & pastikan kolom yayasan tersedia
       const client = await pgPool.connect();
       try {
         await client.query('SELECT 1');
+        await client.query("ALTER TABLE persons ADD COLUMN IF NOT EXISTS yayasan VARCHAR(100) DEFAULT 'Pondok Teknologi'");
+      } catch (e) {
+        // Abaikan jika tabel persons belum dibuat (akan dibuat via schema/migration)
       } finally {
         client.release();
       }
@@ -94,6 +97,7 @@ async function initDb() {
   }
 
   createSqliteTables();
+  ensureSqliteColumns();
   save();
   return sqliteDb;
 }
@@ -105,6 +109,21 @@ function save() {
   fs.writeFileSync(config.DB_FILE, buffer);
 }
 
+function ensureSqliteColumns() {
+  if (!sqliteDb) return;
+  try {
+    const cols = sqliteDb.exec("PRAGMA table_info(persons)");
+    if (cols && cols.length > 0) {
+      const hasYayasan = cols[0].values.some(row => row[1] === 'yayasan');
+      if (!hasYayasan) {
+        sqliteDb.run("ALTER TABLE persons ADD COLUMN yayasan TEXT DEFAULT 'Pondok Teknologi'");
+      }
+    }
+  } catch (err) {
+    // Ignore error if table not ready
+  }
+}
+
 function createSqliteTables() {
   if (!sqliteDb) return;
   sqliteDb.exec(`
@@ -114,6 +133,7 @@ function createSqliteTables() {
       nama TEXT NOT NULL,
       tipe_person TEXT NOT NULL,
       jurusan TEXT,
+      yayasan TEXT DEFAULT 'Pondok Teknologi',
       qr_code TEXT UNIQUE NOT NULL,
       status TEXT NOT NULL DEFAULT 'AKTIF',
       created_at TEXT DEFAULT (datetime('now', 'localtime')),

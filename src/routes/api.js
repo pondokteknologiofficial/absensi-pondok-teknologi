@@ -493,25 +493,45 @@ router.get('/dashboard', async (req, res) => {
 // ==========================================
 router.get('/persons', async (req, res) => {
   try {
-    const { search, tipe, status } = req.query;
+    const { search, tipe, status, yayasan, sort_by, sort_order } = req.query;
     let sql = 'SELECT * FROM persons WHERE 1=1';
     const params = [];
 
     if (search) {
-      sql += ' AND (nama LIKE ? OR nomor_induk LIKE ? OR qr_code LIKE ? OR jurusan LIKE ?)';
+      sql += ' AND (nama LIKE ? OR nomor_induk LIKE ? OR qr_code LIKE ? OR jurusan LIKE ? OR yayasan LIKE ?)';
       const term = `%${search.trim()}%`;
-      params.push(term, term, term, term);
+      params.push(term, term, term, term, term);
     }
     if (tipe) {
       sql += ' AND tipe_person = ?';
       params.push(tipe);
+    }
+    if (yayasan) {
+      sql += ' AND yayasan = ?';
+      params.push(yayasan);
     }
     if (status) {
       sql += ' AND status = ?';
       params.push(status);
     }
 
-    sql += ' ORDER BY tipe_person DESC, nomor_induk ASC';
+    const validCols = {
+      nomor_induk: 'nomor_induk',
+      nama: 'nama',
+      tipe_person: 'tipe_person',
+      yayasan: 'yayasan',
+      jurusan: 'jurusan',
+      qr_code: 'qr_code',
+      status: 'status'
+    };
+
+    if (sort_by && validCols[sort_by]) {
+      const dir = (sort_order && sort_order.toUpperCase() === 'DESC') ? 'DESC' : 'ASC';
+      sql += ` ORDER BY ${validCols[sort_by]} ${dir}, id ASC`;
+    } else {
+      sql += ' ORDER BY tipe_person DESC, nomor_induk ASC';
+    }
+
     const persons = await db.query(sql, params);
     res.json(persons);
   } catch (err) {
@@ -522,7 +542,7 @@ router.get('/persons', async (req, res) => {
 
 router.post('/persons', async (req, res) => {
   try {
-    const { nomor_induk, nama, tipe_person, jurusan, qr_code, status } = req.body;
+    const { nomor_induk, nama, tipe_person, jurusan, yayasan, qr_code, status } = req.body;
     if (!nomor_induk || !nama || !tipe_person || !qr_code) {
       return res.status(400).json({ error: 'Nomor Induk, Nama, Kategori, dan Kode QR wajib diisi' });
     }
@@ -533,9 +553,9 @@ router.post('/persons', async (req, res) => {
     }
 
     const result = await db.run(`
-      INSERT INTO persons (nomor_induk, nama, tipe_person, jurusan, qr_code, status)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [nomor_induk.trim(), nama.trim(), tipe_person, jurusan ? jurusan.trim() : '', qr_code.trim(), status || 'AKTIF']);
+      INSERT INTO persons (nomor_induk, nama, tipe_person, jurusan, yayasan, qr_code, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [nomor_induk.trim(), nama.trim(), tipe_person, jurusan ? jurusan.trim() : '', yayasan ? yayasan.trim() : 'Pondok Teknologi', qr_code.trim(), status || 'AKTIF']);
 
     res.json({ success: true, id: result.lastInsertRowid });
   } catch (err) {
@@ -547,7 +567,7 @@ router.post('/persons', async (req, res) => {
 router.put('/persons/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nomor_induk, nama, tipe_person, jurusan, qr_code, status } = req.body;
+    const { nomor_induk, nama, tipe_person, jurusan, yayasan, qr_code, status } = req.body;
 
     const existing = await db.queryOne('SELECT id FROM persons WHERE (nomor_induk = ? OR qr_code = ?) AND id != ?', [nomor_induk.trim(), qr_code.trim(), id]);
     if (existing) {
@@ -556,9 +576,9 @@ router.put('/persons/:id', async (req, res) => {
 
     await db.run(`
       UPDATE persons 
-      SET nomor_induk = ?, nama = ?, tipe_person = ?, jurusan = ?, qr_code = ?, status = ?, updated_at = datetime('now', 'localtime')
+      SET nomor_induk = ?, nama = ?, tipe_person = ?, jurusan = ?, yayasan = ?, qr_code = ?, status = ?, updated_at = datetime('now', 'localtime')
       WHERE id = ?
-    `, [nomor_induk.trim(), nama.trim(), tipe_person, jurusan ? jurusan.trim() : '', qr_code.trim(), status, id]);
+    `, [nomor_induk.trim(), nama.trim(), tipe_person, jurusan ? jurusan.trim() : '', yayasan ? yayasan.trim() : 'Pondok Teknologi', qr_code.trim(), status, id]);
 
     res.json({ success: true });
   } catch (err) {
@@ -978,11 +998,11 @@ router.post('/prayer-schedules/sync-range', async (req, res) => {
 // ==========================================
 router.get('/attendances', async (req, res) => {
   try {
-    const { tanggal, nama, tipe_person, session_code, status, limit = 500 } = req.query;
+    const { tanggal, nama, tipe_person, session_code, status, sort_by, sort_order, limit = 500 } = req.query;
 
     let sql = `
       SELECT a.id, a.tanggal, a.waktu_scan, a.session_code, a.nama_absensi, a.status, a.keterangan, a.created_at,
-             p.id as person_id, p.nama, p.nomor_induk, p.tipe_person, p.jurusan, p.qr_code
+             p.id as person_id, p.nama, p.nomor_induk, p.tipe_person, p.jurusan, p.yayasan, p.qr_code
       FROM attendances a
       JOIN persons p ON a.person_id = p.id
       WHERE 1=1
@@ -1011,7 +1031,23 @@ router.get('/attendances', async (req, res) => {
       params.push(status);
     }
 
-    sql += ' ORDER BY a.tanggal DESC, a.waktu_scan DESC, a.id DESC LIMIT ?';
+    const validAttendanceCols = {
+      tanggal: 'a.tanggal',
+      waktu_scan: 'a.waktu_scan',
+      nama: 'p.nama',
+      nomor_induk: 'p.nomor_induk',
+      tipe_person: 'p.tipe_person',
+      session_code: 'a.session_code',
+      nama_absensi: 'a.nama_absensi',
+      status: 'a.status'
+    };
+
+    if (sort_by && validAttendanceCols[sort_by]) {
+      const dir = (sort_order && sort_order.toUpperCase() === 'ASC') ? 'ASC' : 'DESC';
+      sql += ` ORDER BY ${validAttendanceCols[sort_by]} ${dir}, a.id DESC LIMIT ?`;
+    } else {
+      sql += ' ORDER BY a.tanggal DESC, a.waktu_scan DESC, a.id DESC LIMIT ?';
+    }
     params.push(Number(limit));
 
     const rows = await db.query(sql, params);
@@ -1148,7 +1184,7 @@ router.get('/attendances/export/csv', async (req, res) => {
   try {
     const { tanggal, session_code } = req.query;
     let sql = `
-      SELECT a.tanggal, p.nomor_induk, p.nama, p.tipe_person as tipe, p.jurusan,
+      SELECT a.tanggal, p.nomor_induk, p.nama, p.tipe_person as tipe, p.jurusan, p.yayasan,
              a.nama_absensi as jenis_absensi, a.waktu_scan, a.status
       FROM attendances a
       JOIN persons p ON a.person_id = p.id
@@ -1167,9 +1203,9 @@ router.get('/attendances/export/csv', async (req, res) => {
 
     const rows = await db.query(sql, params);
 
-    let csv = 'tanggal,nomor_induk,nama,tipe,jurusan,jenis_absensi,waktu_scan,status\n';
+    let csv = 'tanggal,nomor_induk,nama,tipe,jurusan,jenis_absensi,waktu_scan,status,yayasan\n';
     rows.forEach(r => {
-      csv += `"${r.tanggal}","${r.nomor_induk}","${r.nama}","${r.tipe}","${r.jurusan || ''}","${r.jenis_absensi}","${r.waktu_scan}","${r.status}"\n`;
+      csv += `"${r.tanggal}","${r.nomor_induk}","${r.nama}","${r.tipe}","${r.jurusan || ''}","${r.jenis_absensi}","${r.waktu_scan}","${r.status}","${r.yayasan || ''}"\n`;
     });
 
     const exportDate = tanggal || getJakartaDate();
@@ -1185,11 +1221,11 @@ router.get('/attendances/export/csv', async (req, res) => {
 // Download Data Person CSV
 router.get('/persons/export/csv', async (req, res) => {
   try {
-    const rows = await db.query('SELECT nomor_induk, nama, tipe_person, jurusan, qr_code, status FROM persons ORDER BY tipe_person DESC, nomor_induk ASC');
+    const rows = await db.query('SELECT nomor_induk, nama, tipe_person, jurusan, yayasan, qr_code, status FROM persons ORDER BY tipe_person DESC, nomor_induk ASC');
 
-    let csv = 'nomor_induk,nama,tipe,jurusan,qr_code,status\n';
+    let csv = 'nomor_induk,nama,tipe,jurusan,qr_code,status,yayasan\n';
     rows.forEach(r => {
-      csv += `"${r.nomor_induk}","${r.nama}","${r.tipe_person}","${r.jurusan || ''}","${r.qr_code}","${r.status}"\n`;
+      csv += `"${r.nomor_induk}","${r.nama}","${r.tipe_person}","${r.jurusan || ''}","${r.qr_code}","${r.status}","${r.yayasan || ''}"\n`;
     });
 
     res.header('Content-Type', 'text/csv');

@@ -510,6 +510,54 @@ body {
   letter-spacing: 0.5px;
 }
 
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.data-table th.sortable:hover {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.data-table th .th-sort-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.data-table th.sortable .sort-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.45;
+  transition: opacity 0.2s, color 0.2s;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.data-table th.sortable:hover .sort-indicator {
+  opacity: 0.9;
+  color: #38bdf8;
+}
+
+.data-table th.sortable.active-sort {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border-bottom-color: #38bdf8;
+}
+
+.data-table th.sortable.active-sort .sort-indicator {
+  opacity: 1;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.2);
+  font-weight: 800;
+}
+
 .data-table td {
   padding: 14px 16px;
   border-bottom: 1px solid rgba(51, 65, 85, 0.6);

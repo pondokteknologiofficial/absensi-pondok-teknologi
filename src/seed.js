@@ -3,45 +3,41 @@ const { getJakartaDate } = require('./rules');
 const { getPrayerTimesForDate } = require('./prayerService');
 
 const SAMPLE_PERSONS = [
-  // PENGURUS
+  // PONDOK TEKNOLOGI - PENGURUS
   {
     nomor_induk: 'PT001',
     nama: 'Ryan Firmansyah',
     tipe_person: 'PENGURUS',
     jurusan: 'Digital Marketing',
+    yayasan: 'Pondok Teknologi',
     qr_code: 'QR-001',
     status: 'AKTIF'
   },
   {
     nomor_induk: 'PT002',
-    nama: 'M Nur Ibnu Hubab',
+    nama: 'Muhammad Nur Ibnu Hubab',
     tipe_person: 'PENGURUS',
     jurusan: 'Programming',
+    yayasan: 'Pondok Teknologi',
     qr_code: 'QR-002',
     status: 'AKTIF'
   },
   {
     nomor_induk: 'PT003',
-    nama: 'Sulaiman',
+    nama: 'Sulaiman Abdul Wahhab',
     tipe_person: 'PENGURUS',
     jurusan: 'Programming',
+    yayasan: 'Pondok Teknologi',
     qr_code: 'QR-003',
     status: 'AKTIF'
   },
-  {
-    nomor_induk: 'PT008',
-    nama: 'Reno Aristya Febrian',
-    tipe_person: 'PENGURUS',
-    jurusan: 'Pengurus',
-    qr_code: 'QR-008',
-    status: 'AKTIF'
-  },
-  // SANTRI
+  // PONDOK TEKNOLOGI - SANTRI
   {
     nomor_induk: 'PT004',
     nama: 'Farhan Sudrajat',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Teknologi',
     qr_code: 'QR-004',
     status: 'AKTIF'
   },
@@ -50,6 +46,7 @@ const SAMPLE_PERSONS = [
     nama: 'Muhammad Haidar Rasyid',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Teknologi',
     qr_code: 'QR-005',
     status: 'AKTIF'
   },
@@ -58,22 +55,118 @@ const SAMPLE_PERSONS = [
     nama: 'Razqa Nazarrahman',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Teknologi',
     qr_code: 'QR-006',
     status: 'AKTIF'
   },
   {
     nomor_induk: 'PT007',
-    nama: 'Abu Bakar',
+    nama: 'Abu Bakar Muhammad',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Teknologi',
     qr_code: 'QR-007',
     status: 'AKTIF'
   },
+  {
+    nomor_induk: 'PT015',
+    nama: 'Hanif',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Teknologi',
+    qr_code: 'QR-015',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT016',
+    nama: 'Rio Rizky Fauzy',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Teknologi',
+    qr_code: 'QR-016',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT017',
+    nama: 'Tyo Raditya Hermawan',
+    tipe_person: 'SANTRI',
+    jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Teknologi',
+    qr_code: 'QR-017',
+    status: 'AKTIF'
+  },
+  // PONDOK ENTERPRENEUR - SANTRI
+  {
+    nomor_induk: 'PT018',
+    nama: 'Ebid El Tawwab Shoheh',
+    tipe_person: 'SANTRI',
+    jurusan: 'Enterpreneur',
+    yayasan: 'Pondok Enterpreneur',
+    qr_code: 'QR-018',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT019',
+    nama: 'Hammam Abdurrahman',
+    tipe_person: 'SANTRI',
+    jurusan: 'Enterpreneur',
+    yayasan: 'Pondok Enterpreneur',
+    qr_code: 'QR-019',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT020',
+    nama: 'Muhammad Ghozi Siregar',
+    tipe_person: 'SANTRI',
+    jurusan: 'Enterpreneur',
+    yayasan: 'Pondok Enterpreneur',
+    qr_code: 'QR-020',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT021',
+    nama: 'Muhammad Arif Rahman',
+    tipe_person: 'SANTRI',
+    jurusan: 'Enterpreneur',
+    yayasan: 'Pondok Enterpreneur',
+    qr_code: 'QR-021',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT022',
+    nama: 'Muhammad Zikri Anugrah',
+    tipe_person: 'SANTRI',
+    jurusan: 'Enterpreneur',
+    yayasan: 'Pondok Enterpreneur',
+    qr_code: 'QR-022',
+    status: 'AKTIF'
+  },
+  {
+    nomor_induk: 'PT023',
+    nama: 'Habibie Hakim Viandeito',
+    tipe_person: 'SANTRI',
+    jurusan: 'Enterpreneur',
+    yayasan: 'Pondok Enterpreneur',
+    qr_code: 'QR-023',
+    status: 'AKTIF'
+  },
+  // PONDOK ANAK PENGUSAHA INDONESIA - PENGURUS
+  {
+    nomor_induk: 'PT008',
+    nama: 'Reno Aristya Febrian',
+    tipe_person: 'PENGURUS',
+    jurusan: 'Pengurus',
+    yayasan: 'Pondok Anak Pengusaha Indonesia',
+    qr_code: 'QR-008',
+    status: 'AKTIF'
+  },
+  // PONDOK ANAK PENGUSAHA INDONESIA - SANTRI
   {
     nomor_induk: 'PT009',
     nama: 'M. Fahmi Muftiadi',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Anak Pengusaha Indonesia',
     qr_code: 'QR-009',
     status: 'AKTIF'
   },
@@ -82,6 +175,7 @@ const SAMPLE_PERSONS = [
     nama: 'Ali Abdullah',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Anak Pengusaha Indonesia',
     qr_code: 'QR-010',
     status: 'AKTIF'
   },
@@ -90,6 +184,7 @@ const SAMPLE_PERSONS = [
     nama: 'Abdul Hafizh',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Anak Pengusaha Indonesia',
     qr_code: 'QR-011',
     status: 'AKTIF'
   },
@@ -98,6 +193,7 @@ const SAMPLE_PERSONS = [
     nama: 'Muhammad Akbar',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Anak Pengusaha Indonesia',
     qr_code: 'QR-012',
     status: 'AKTIF'
   },
@@ -106,6 +202,7 @@ const SAMPLE_PERSONS = [
     nama: 'Almay S. Rasyidi',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Anak Pengusaha Indonesia',
     qr_code: 'QR-013',
     status: 'AKTIF'
   },
@@ -114,6 +211,7 @@ const SAMPLE_PERSONS = [
     nama: 'Abdullah Musa',
     tipe_person: 'SANTRI',
     jurusan: 'Bisnis Digital',
+    yayasan: 'Pondok Anak Pengusaha Indonesia',
     qr_code: 'QR-014',
     status: 'AKTIF'
   }
@@ -155,14 +253,20 @@ const DEFAULT_PRAYER_TIMES = {
 async function seedDatabase(force = false) {
   await db.initDb();
 
-  // 1. Seed Persons (Pastikan semua sample persons terdaftar tanpa duplikasi)
+  // 1. Seed Persons (Pastikan semua sample persons terdaftar & disinkronkan)
   for (const p of SAMPLE_PERSONS) {
-    const existing = await db.queryOne('SELECT id FROM persons WHERE nomor_induk = ? OR qr_code = ?', [p.nomor_induk, p.qr_code]);
+    const existing = await db.queryOne('SELECT id FROM persons WHERE nomor_induk = ?', [p.nomor_induk]);
     if (!existing) {
       await db.run(`
-        INSERT INTO persons (nomor_induk, nama, tipe_person, jurusan, qr_code, status)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `, [p.nomor_induk, p.nama, p.tipe_person, p.jurusan, p.qr_code, p.status]);
+        INSERT INTO persons (nomor_induk, nama, tipe_person, jurusan, yayasan, qr_code, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [p.nomor_induk, p.nama, p.tipe_person, p.jurusan, p.yayasan || 'Pondok Teknologi', p.qr_code, p.status]);
+    } else {
+      await db.run(`
+        UPDATE persons
+        SET nama = ?, tipe_person = ?, jurusan = ?, yayasan = ?, qr_code = ?, status = ?
+        WHERE nomor_induk = ?
+      `, [p.nama, p.tipe_person, p.jurusan, p.yayasan || 'Pondok Teknologi', p.qr_code, p.status, p.nomor_induk]);
     }
   }
 

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS persons (
     nama VARCHAR(255) NOT NULL,
     tipe_person VARCHAR(50) NOT NULL, -- SANTRI / PENGURUS
     jurusan VARCHAR(100),
+    yayasan VARCHAR(100) DEFAULT 'Pondok Teknologi',
     qr_code VARCHAR(100) UNIQUE NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'AKTIF', -- AKTIF / NONAKTIF
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'Asia/Jakarta'),

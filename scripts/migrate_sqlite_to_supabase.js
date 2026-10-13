@@ -98,16 +98,17 @@ async function runMigration() {
     console.log(`   -> Mengimpor ${persons.length} data persons...`);
     for (const p of persons) {
       await client.query(`
-        INSERT INTO persons (id, nomor_induk, nama, tipe_person, jurusan, qr_code, status, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO persons (id, nomor_induk, nama, tipe_person, jurusan, yayasan, qr_code, status, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (nomor_induk) DO UPDATE SET
           nama = EXCLUDED.nama,
           tipe_person = EXCLUDED.tipe_person,
           jurusan = EXCLUDED.jurusan,
+          yayasan = EXCLUDED.yayasan,
           qr_code = EXCLUDED.qr_code,
           status = EXCLUDED.status,
           updated_at = EXCLUDED.updated_at
-      `, [p.id, p.nomor_induk, p.nama, p.tipe_person, p.jurusan || '', p.qr_code, p.status, p.created_at || new Date(), p.updated_at || new Date()]);
+      `, [p.id, p.nomor_induk, p.nama, p.tipe_person, p.jurusan || '', p.yayasan || 'Pondok Teknologi', p.qr_code, p.status, p.created_at || new Date(), p.updated_at || new Date()]);
     }
     await client.query("SELECT setval(pg_get_serial_sequence('persons', 'id'), coalesce(max(id), 1), true) FROM persons");
 
